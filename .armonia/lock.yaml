@@ -27,6 +27,10 @@ files:
     source: "core@1.0.0:templates/pull_request_template.md"
     ownership: "scaffold"
     hash: "b86e56450033f82f91713ea412f663f4fe143f87f161f34605cda6f4b076886c"
+  .github/workflows/armonia-ci.yml:
+    source: "core@1.0.0:templates/armonia-ci.yml.tmpl"
+    ownership: "managed"
+    hash: "4ce95125b325a60e70acda31b5231c29ea12432b1df77ccf14c55465efb6d354"
   AGENTS.md:
     source: "core@1.0.0:templates/AGENTS.md.tmpl"
     ownership: "scaffold"

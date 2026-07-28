@@ -12,6 +12,9 @@ spec:
   criticality: "tier-3"
   profile: "baseline"
   visibility: "private"
+  distribution:
+    repository: "AleDet01/armonia"
+    ref: "16d4b7846a40e1ce68aa7cb06f3884670d562701"
   packs:
     -
       id: "core"
@@ -69,11 +72,3 @@ spec:
   ai:
     contextEntry: "AGENTS.md"
     generatedAdapters: []
-  policy:
-    exceptions:
-      -
-        rule: "github.distribution-required"
-        reason: "The immutable repository ref can only be configured after first publication."
-        owner: "alexd"
-        expires: "2027-01-31"
-        trackingIssue: "ROADMAP-publication"

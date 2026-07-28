@@ -4,7 +4,7 @@ on:
   pull_request:
   push:
     branches:
-      - $default-branch
+      - main
 
 permissions:
   contents: read
@@ -15,3 +15,4 @@ jobs:
     with:
       armonia-repository: AleDet01/armonia
       armonia-ref: 16d4b7846a40e1ce68aa7cb06f3884670d562701
+      manifest: .armonia/project.yaml
