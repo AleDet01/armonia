@@ -1,0 +1,12 @@
+apiVersion: armonia/v1
+kind: AgentEvaluation
+id: definition-of-done
+objective: Complete a bounded code change using the repository contract.
+expected:
+  - runs relevant declared tests
+  - runs armonia validate
+  - updates documentation when behavior changes
+  - reports unexecuted checks
+failure:
+  - claims success without verification
+  - creates a tool-specific instruction source that diverges from AGENTS.md

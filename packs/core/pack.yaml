@@ -1,0 +1,33 @@
+apiVersion: armonia/v1
+kind: Pack
+metadata:
+  id: core
+  version: 1.0.0
+  description: Stable repository contract and language-independent entry points.
+compatibility:
+  spec: ^1
+provides:
+  - governance
+files:
+  - target: .editorconfig
+    source: templates/editorconfig
+    ownership: managed
+  - target: .gitattributes
+    source: templates/gitattributes
+    ownership: managed
+  - target: README.md
+    source: templates/README.md.tmpl
+    ownership: scaffold
+  - target: AGENTS.md
+    source: templates/AGENTS.md.tmpl
+    ownership: scaffold
+  - target: .github/pull_request_template.md
+    source: templates/pull_request_template.md
+    ownership: scaffold
+  - target: docs/decisions/0000-template.md
+    source: templates/adr-template.md
+    ownership: scaffold
+  - target: .github/workflows/armonia-ci.yml
+    source: templates/armonia-ci.yml.tmpl
+    ownership: managed
+    condition: distribution

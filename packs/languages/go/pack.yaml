@@ -1,0 +1,23 @@
+apiVersion: armonia/v1
+kind: Pack
+metadata:
+  id: language/go
+  version: 1.0.0
+  description: Go module capability defaults.
+compatibility:
+  spec: ^1
+requires:
+  - id: core
+    version: 1.0.0
+provides:
+  - language/go
+defaults:
+  capabilities:
+    setup:
+      argv: [go, mod, download]
+    lint:
+      argv: [go, vet, ./...]
+    test:
+      argv: [go, test, ./...]
+    build:
+      argv: [go, build, ./...]

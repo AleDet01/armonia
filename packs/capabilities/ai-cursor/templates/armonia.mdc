@@ -1,0 +1,7 @@
+---
+description: Canonical Armonìa repository contract
+alwaysApply: true
+---
+
+Read `AGENTS.md` and `.armonia/project.yaml` before editing. Discover commands with
+`armonia inspect --json`. Do not edit Armonìa-managed files directly.

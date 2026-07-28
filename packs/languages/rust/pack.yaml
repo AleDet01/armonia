@@ -1,0 +1,25 @@
+apiVersion: armonia/v1
+kind: Pack
+metadata:
+  id: language/rust
+  version: 1.0.0
+  description: Rust and Cargo capability defaults.
+compatibility:
+  spec: ^1
+requires:
+  - id: core
+    version: 1.0.0
+provides:
+  - language/rust
+defaults:
+  capabilities:
+    setup:
+      argv: [cargo, fetch, --locked]
+    format:
+      argv: [cargo, fmt, --all, --check]
+    lint:
+      argv: [cargo, clippy, --all-targets, --, -D, warnings]
+    test:
+      argv: [cargo, test, --locked]
+    build:
+      argv: [cargo, build, --locked]

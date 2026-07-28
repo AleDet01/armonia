@@ -1,0 +1,37 @@
+apiVersion: armonia/v1
+kind: Project
+metadata:
+  id: examples/rust-cli
+  name: Rust CLI
+  description: Cross-platform command-line application.
+  owners: [cli-team]
+spec:
+  lifecycle: active
+  maturity: emerging
+  criticality: tier-3
+  profile: baseline
+  visibility: public
+  packs:
+    - id: core
+      version: 1.0.0
+    - id: language/rust
+      version: 1.0.0
+    - id: archetype/cli
+      version: 1.0.0
+    - id: capability/release
+      version: 1.0.0
+  components:
+    - id: cli
+      path: .
+      languages: [rust]
+      capabilities:
+        setup:
+          argv: [cargo, fetch, --locked]
+        format:
+          argv: [cargo, fmt, --all, --check]
+        lint:
+          argv: [cargo, clippy, --all-targets, --, -D, warnings]
+        test:
+          argv: [cargo, test, --locked]
+        build:
+          argv: [cargo, build, --release, --locked]

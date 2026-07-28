@@ -1,0 +1,26 @@
+# AGENTS.md
+
+## Project
+
+`<<armonia:project.name>>` is governed by Armonìa. Read `.armonia/project.yaml` before making
+changes and use `armonia inspect` to discover components and capabilities.
+
+## Canonical commands
+
+- `armonia validate`: validate the manifest and active policy profile.
+- `armonia plan`: preview generated-file changes.
+- `armonia run test`: execute the declared test capability.
+- `armonia run build`: execute the declared build capability.
+
+## Boundaries
+
+- Do not edit files reported as `managed` in `.armonia/lock.yaml`.
+- Do not run `armonia apply --force` without reviewing every conflict.
+- Do not add secrets to the repository, manifest, workflow, or agent instructions.
+- Keep technology-specific commands in the component capability map.
+- Record durable architecture decisions in `docs/decisions/`.
+
+## Definition of done
+
+The relevant tests pass, `armonia validate` reports no errors, documentation reflects the
+change, and generated-file drift is resolved.

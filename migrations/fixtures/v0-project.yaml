@@ -1,0 +1,9 @@
+version: 0
+name: Legacy service
+description: Prototype manifest used for migration conformance.
+owner: maintainer
+language: generic
+lifecycle: incubating
+profile: baseline
+commands:
+  test: [node, --test]

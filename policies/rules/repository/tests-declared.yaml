@@ -1,0 +1,8 @@
+apiVersion: armonia/v1
+kind: Policy
+id: repository.tests-declared
+title: Test capability must be declared
+description: Every governed component should expose a deterministic test capability.
+defaultSeverity: warning
+check: tests-declared
+remediation: Add a test command to each applicable component or document a temporary exception.

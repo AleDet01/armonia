@@ -1,0 +1,40 @@
+name: Feature proposal
+description: Propose an evidenced extension to the platform.
+title: "proposal: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: Describe the repeated repository problem, not the preferred implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: List the real repositories or use cases that need this capability.
+    validations:
+      required: true
+  - type: dropdown
+    id: layer
+    attributes:
+      label: Proposed layer
+      options:
+        - core specification
+        - CLI
+        - policy
+        - language pack
+        - archetype pack
+        - capability pack
+        - integration
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives and compatibility impact
+    validations:
+      required: true

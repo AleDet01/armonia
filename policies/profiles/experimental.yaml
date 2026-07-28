@@ -1,0 +1,10 @@
+apiVersion: armonia/v1
+kind: PolicyProfile
+metadata:
+  id: experimental
+  description: Lightweight guidance for short-lived experiments.
+rules:
+  - id: repository.readme-required
+    severity: warning
+  - id: repository.agents-required
+    severity: warning

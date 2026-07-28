@@ -1,0 +1,35 @@
+apiVersion: armonia/v1
+kind: Project
+metadata:
+  id: examples/python-service
+  name: Python service
+  description: Production-oriented Python service using uv.
+  owners: [service-team]
+spec:
+  lifecycle: active
+  maturity: stable
+  criticality: tier-2
+  profile: production
+  visibility: private
+  packs:
+    - id: core
+      version: 1.0.0
+    - id: language/python
+      version: 1.0.0
+    - id: archetype/service
+      version: 1.0.0
+    - id: capability/container
+      version: 1.0.0
+  components:
+    - id: api
+      path: .
+      languages: [python]
+      capabilities:
+        setup:
+          argv: [uv, sync, --frozen]
+        lint:
+          argv: [uv, run, ruff, check, .]
+        test:
+          argv: [uv, run, pytest]
+        build:
+          argv: [uv, build]

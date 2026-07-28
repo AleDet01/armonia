@@ -1,0 +1,9 @@
+apiVersion: armonia/v1
+kind: Policy
+id: repository.lock-required
+title: Armonìa lockfile is required
+description: The resolved Armonìa state is not committed.
+defaultSeverity: error
+check: file-exists
+path: .armonia/lock.yaml
+remediation: Run `armonia plan` and `armonia apply`, then commit .armonia/lock.yaml.

@@ -1,0 +1,9 @@
+apiVersion: armonia/v1
+kind: Policy
+id: repository.agents-required
+title: Agent entry point is required
+description: The repository has no portable AGENTS.md entry point.
+defaultSeverity: error
+check: file-exists
+path: AGENTS.md
+remediation: Create AGENTS.md or apply the core pack.

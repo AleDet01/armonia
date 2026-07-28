@@ -1,0 +1,9 @@
+apiVersion: armonia/v1
+kind: RegistrySources
+organizations: []
+repositories: []
+exclude:
+  archived: false
+output:
+  format: json
+  includeOperationalHealth: true

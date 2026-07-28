@@ -1,0 +1,17 @@
+apiVersion: armonia/v1
+kind: Pack
+metadata:
+  id: capability/ai-gemini
+  version: 1.0.0
+  description: Thin Gemini adapter for the canonical AGENTS.md context.
+compatibility:
+  spec: ^1
+requires:
+  - id: core
+    version: 1.0.0
+provides:
+  - ai/gemini
+files:
+  - target: GEMINI.md
+    source: templates/GEMINI.md
+    ownership: managed

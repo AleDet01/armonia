@@ -1,0 +1,8 @@
+apiVersion: armonia/v1
+kind: Policy
+id: github.distribution-required
+title: Armonìa distribution must be pinned
+description: The manifest does not declare the Armonìa repository and immutable distribution ref.
+defaultSeverity: warning
+check: distribution-declared
+remediation: Set spec.distribution.repository and spec.distribution.ref, then apply the core pack.

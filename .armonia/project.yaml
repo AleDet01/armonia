@@ -1,0 +1,79 @@
+apiVersion: "armonia/v1"
+kind: "Project"
+metadata:
+  id: "armonia/framework"
+  name: "Armonìa"
+  description: "Language-independent repository governance and developer-experience framework."
+  owners:
+    - "AleDet01"
+spec:
+  lifecycle: "incubating"
+  maturity: "prototype"
+  criticality: "tier-3"
+  profile: "baseline"
+  visibility: "private"
+  packs:
+    -
+      id: "core"
+      version: "1.0.0"
+    -
+      id: "language/typescript"
+      version: "1.0.0"
+    -
+      id: "archetype/cli"
+      version: "1.0.0"
+    -
+      id: "governance/open-source"
+      version: "1.0.0"
+  components:
+    -
+      id: "root"
+      path: "."
+      languages:
+        - "typescript"
+      capabilities:
+        setup:
+          argv:
+            - "pnpm"
+            - "install"
+            - "--frozen-lockfile"
+        lint:
+          argv:
+            - "node"
+            - "src/cli.ts"
+            - "version"
+        test:
+          argv:
+            - "node"
+            - "--test"
+            - "test/core.test.ts"
+            - "test/cli.test.ts"
+        build:
+          argv:
+            - "npm"
+            - "pack"
+            - "--dry-run"
+        package:
+          argv:
+            - "npm"
+            - "pack"
+        verify:
+          argv:
+            - "pnpm"
+            - "run"
+            - "verify"
+  github:
+    defaultBranch: "main"
+    issues: true
+    releases: false
+  ai:
+    contextEntry: "AGENTS.md"
+    generatedAdapters: []
+  policy:
+    exceptions:
+      -
+        rule: "github.distribution-required"
+        reason: "The immutable repository ref can only be configured after first publication."
+        owner: "alexd"
+        expires: "2027-01-31"
+        trackingIssue: "ROADMAP-publication"

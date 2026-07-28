@@ -1,0 +1,8 @@
+apiVersion: armonia/v1
+kind: Policy
+id: security.actions-pinned
+title: Actions must use immutable references
+description: Third-party GitHub Actions should be pinned to a full commit SHA.
+defaultSeverity: warning
+check: actions-pinned
+remediation: Replace the mutable tag with the corresponding 40-character commit SHA and retain a version comment.

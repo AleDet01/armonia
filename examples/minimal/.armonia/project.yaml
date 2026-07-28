@@ -1,0 +1,25 @@
+apiVersion: armonia/v1
+kind: Project
+metadata:
+  id: examples/minimal
+  name: Minimal project
+  description: Generic adapter with fully explicit commands.
+  owners: [maintainer]
+spec:
+  lifecycle: incubating
+  maturity: prototype
+  criticality: tier-4
+  profile: experimental
+  visibility: private
+  packs:
+    - id: core
+      version: 1.0.0
+    - id: language/generic
+      version: 1.0.0
+  components:
+    - id: root
+      path: .
+      languages: [custom]
+      capabilities:
+        test:
+          argv: [node, --test]

@@ -1,0 +1,17 @@
+apiVersion: armonia/v1
+kind: Pack
+metadata:
+  id: capability/ai-cursor
+  version: 1.0.0
+  description: Thin Cursor adapter for the canonical AGENTS.md context.
+compatibility:
+  spec: ^1
+requires:
+  - id: core
+    version: 1.0.0
+provides:
+  - ai/cursor
+files:
+  - target: .cursor/rules/armonia.mdc
+    source: templates/armonia.mdc
+    ownership: managed

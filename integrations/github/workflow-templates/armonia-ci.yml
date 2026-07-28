@@ -1,0 +1,17 @@
+name: Armonia CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - $default-branch
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    uses: OWNER/armonia/.github/workflows/reusable-ci.yml@IMMUTABLE_SHA
+    with:
+      armonia-repository: OWNER/armonia
+      armonia-ref: IMMUTABLE_SHA

@@ -1,0 +1,8 @@
+apiVersion: armonia/v1
+kind: Policy
+id: github.permissions-explicit
+title: Workflow permissions must be explicit
+description: GitHub Actions workflow does not declare a permissions boundary
+defaultSeverity: warning
+check: workflow-permissions-explicit
+remediation: Add the minimum required top-level or job-level `permissions` declaration.

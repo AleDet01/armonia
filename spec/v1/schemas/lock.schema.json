@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://armonia.invalid/spec/v1/lock.schema.json",
+  "title": "Armonìa Lock File",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "kind", "generatedBy", "packs", "files"],
+  "properties": {
+    "apiVersion": { "const": "armonia/v1" },
+    "kind": { "const": "Lock" },
+    "generatedBy": { "type": "string", "minLength": 1 },
+    "packs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "version"],
+        "properties": {
+          "id": { "type": "string" },
+          "version": { "type": "string" }
+        }
+      }
+    },
+    "files": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source", "ownership", "hash"],
+        "properties": {
+          "source": { "type": "string" },
+          "ownership": {
+            "enum": ["managed", "scaffold", "reference"]
+          },
+          "hash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        }
+      }
+    }
+  }
+}

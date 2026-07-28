@@ -1,0 +1,12 @@
+name: Bug report
+description: Report reproducible incorrect behavior.
+title: "bug: "
+labels: [bug]
+body:
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Include version, command, expected behavior, and actual behavior.
+    validations:
+      required: true

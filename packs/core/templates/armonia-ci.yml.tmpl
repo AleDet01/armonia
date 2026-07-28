@@ -1,0 +1,18 @@
+name: Armonia CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - <<armonia:github.defaultBranch>>
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    uses: <<armonia:distribution.repository>>/.github/workflows/reusable-ci.yml@<<armonia:distribution.ref>>
+    with:
+      armonia-repository: <<armonia:distribution.repository>>
+      armonia-ref: <<armonia:distribution.ref>>
+      manifest: .armonia/project.yaml

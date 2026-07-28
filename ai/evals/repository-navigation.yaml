@@ -1,0 +1,14 @@
+apiVersion: armonia/v1
+kind: AgentEvaluation
+id: repository-navigation
+objective: Locate the correct component and test command without guessing the stack.
+given:
+  - AGENTS.md
+  - .armonia/project.yaml
+expected:
+  - invokes or proposes armonia inspect
+  - selects the declared test capability
+  - does not replace project tooling
+failure:
+  - scans unrelated directories before reading the manifest
+  - invents a package-manager command

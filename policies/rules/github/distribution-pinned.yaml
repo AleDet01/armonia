@@ -1,0 +1,8 @@
+apiVersion: armonia/v1
+kind: Policy
+id: github.distribution-pinned
+title: Armonìa distribution ref must be immutable
+description: The selected Armonìa distribution must use a full commit SHA.
+defaultSeverity: warning
+check: distribution-pinned
+remediation: Replace the branch or tag with the corresponding 40-character commit SHA.

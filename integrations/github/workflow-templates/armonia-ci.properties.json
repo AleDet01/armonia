@@ -1,0 +1,6 @@
+{
+  "name": "Armonìa CI",
+  "description": "Validate the repository contract and run declared component capabilities.",
+  "iconName": "octicon workflow",
+  "categories": ["Continuous integration"]
+}

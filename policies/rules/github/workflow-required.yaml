@@ -1,0 +1,8 @@
+apiVersion: armonia/v1
+kind: Policy
+id: github.workflow-required
+title: Continuous integration is required
+description: No GitHub Actions workflow was found.
+defaultSeverity: warning
+check: workflow-exists
+remediation: Configure an Armonìa caller workflow or an equivalent local validation workflow.

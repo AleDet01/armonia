@@ -1,0 +1,44 @@
+apiVersion: armonia/v1
+kind: Project
+metadata:
+  id: examples/typescript-library
+  name: TypeScript library
+  description: Versioned library distributed through a package registry.
+  owners: [library-team]
+spec:
+  lifecycle: active
+  maturity: stable
+  criticality: tier-3
+  profile: baseline
+  visibility: public
+  packs:
+    - id: core
+      version: 1.0.0
+    - id: language/typescript
+      version: 1.0.0
+    - id: archetype/library
+      version: 1.0.0
+    - id: capability/release
+      version: 1.0.0
+    - id: governance/open-source
+      version: 1.0.0
+  components:
+    - id: package
+      path: .
+      languages: [typescript]
+      capabilities:
+        setup:
+          argv: [pnpm, install, --frozen-lockfile]
+        lint:
+          argv: [pnpm, lint]
+        typecheck:
+          argv: [pnpm, check]
+        test:
+          argv: [pnpm, test]
+        build:
+          argv: [pnpm, build]
+        package:
+          argv: [pnpm, pack]
+  ai:
+    contextEntry: AGENTS.md
+    generatedAdapters: [codex, cursor]

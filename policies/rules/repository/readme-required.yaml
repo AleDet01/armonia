@@ -1,0 +1,9 @@
+apiVersion: armonia/v1
+kind: Policy
+id: repository.readme-required
+title: README is required
+description: The repository has no README.md entry point.
+defaultSeverity: error
+check: file-exists
+path: README.md
+remediation: Create README.md with purpose, status, setup, verification, and support information.

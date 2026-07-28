@@ -1,0 +1,8 @@
+apiVersion: armonia/v1
+kind: Policy
+id: security.security-file-required
+title: Security policy is required
+description: Applicable project has no SECURITY.md vulnerability-reporting policy.
+defaultSeverity: error
+check: security-file-applicable
+remediation: Add SECURITY.md with supported versions and a private reporting channel.

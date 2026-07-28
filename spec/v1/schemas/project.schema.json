@@ -1,0 +1,184 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://armonia.invalid/spec/v1/project.schema.json",
+  "title": "Armonìa Project Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": { "const": "armonia/v1" },
+    "kind": { "const": "Project" },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "owners"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 3,
+          "pattern": "^[A-Za-z0-9._/-]+$"
+        },
+        "name": { "type": "string", "minLength": 1 },
+        "description": { "type": "string" },
+        "owners": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lifecycle", "profile", "packs", "components"],
+      "properties": {
+        "lifecycle": {
+          "enum": ["proposed", "incubating", "active", "maintenance", "deprecated", "archived"]
+        },
+        "maturity": {
+          "enum": ["prototype", "emerging", "stable"]
+        },
+        "criticality": {
+          "enum": ["tier-1", "tier-2", "tier-3", "tier-4"]
+        },
+        "profile": {
+          "enum": ["experimental", "baseline", "production", "high-assurance"]
+        },
+        "visibility": {
+          "enum": ["public", "private", "internal"]
+        },
+        "distribution": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["repository", "ref"],
+          "properties": {
+            "repository": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+            },
+            "ref": { "type": "string", "minLength": 1 }
+          }
+        },
+        "packs": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/packReference" }
+        },
+        "components": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/component" }
+        },
+        "github": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "defaultBranch": { "type": "string", "minLength": 1 },
+            "issues": { "type": "boolean" },
+            "releases": { "type": "boolean" }
+          }
+        },
+        "ai": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "contextEntry": { "type": "string", "minLength": 1 },
+            "generatedAdapters": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "exceptions": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/policyException" }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "packReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*(/[a-z0-9][a-z0-9-]*)?$"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$"
+        },
+        "path": { "type": "string", "minLength": 1 }
+      }
+    },
+    "command": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["argv"],
+      "properties": {
+        "argv": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        },
+        "cwd": { "type": "string" },
+        "env": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "description": { "type": "string" }
+      }
+    },
+    "component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "path"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]*$"
+        },
+        "path": { "type": "string", "minLength": 1 },
+        "languages": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "capabilities": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/command" }
+        }
+      }
+    },
+    "policyException": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rule", "reason", "owner", "expires"],
+      "properties": {
+        "rule": { "type": "string", "minLength": 3 },
+        "reason": { "type": "string", "minLength": 10 },
+        "owner": { "type": "string", "minLength": 1 },
+        "expires": {
+          "type": "string",
+          "format": "date"
+        },
+        "trackingIssue": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "integer", "minimum": 1 }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,13 @@
+apiVersion: armonia/v1
+kind: AgentContext
+requiredSections:
+  - purpose
+  - repository-map
+  - canonical-commands
+  - boundaries
+  - definition-of-done
+canonicalEntry: AGENTS.md
+machineInterfaces:
+  - armonia inspect --json
+  - armonia validate --json
+  - armonia plan --json

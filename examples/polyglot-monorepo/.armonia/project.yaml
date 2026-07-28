@@ -1,0 +1,51 @@
+apiVersion: armonia/v1
+kind: Project
+metadata:
+  id: examples/polyglot-monorepo
+  name: Polyglot monorepo
+  description: Go API and TypeScript web application under one governance boundary.
+  owners: [platform-team]
+spec:
+  lifecycle: active
+  maturity: emerging
+  criticality: tier-2
+  profile: production
+  visibility: private
+  packs:
+    - id: core
+      version: 1.0.0
+    - id: language/go
+      version: 1.0.0
+    - id: language/typescript
+      version: 1.0.0
+    - id: archetype/service
+      version: 1.0.0
+    - id: archetype/webapp
+      version: 1.0.0
+  components:
+    - id: api
+      path: services/api
+      languages: [go]
+      capabilities:
+        setup:
+          argv: [go, mod, download]
+        lint:
+          argv: [go, vet, ./...]
+        test:
+          argv: [go, test, ./...]
+        build:
+          argv: [go, build, ./...]
+    - id: web
+      path: apps/web
+      languages: [typescript]
+      capabilities:
+        setup:
+          argv: [pnpm, install, --frozen-lockfile]
+        lint:
+          argv: [pnpm, lint]
+        typecheck:
+          argv: [pnpm, check]
+        test:
+          argv: [pnpm, test]
+        build:
+          argv: [pnpm, build]

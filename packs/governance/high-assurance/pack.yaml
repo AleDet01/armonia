@@ -1,0 +1,14 @@
+apiVersion: armonia/v1
+kind: Pack
+metadata:
+  id: governance/high-assurance
+  version: 1.0.0
+  description: Strict governance for critical or sensitive repositories.
+compatibility:
+  spec: ^1
+requires:
+  - id: core
+    version: 1.0.0
+policies:
+  - security.actions-pinned
+  - security.security-file-required

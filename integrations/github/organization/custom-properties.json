@@ -1,0 +1,39 @@
+[
+  {
+    "property_name": "armonia_lifecycle",
+    "value_type": "single_select",
+    "required": true,
+    "default_value": "incubating",
+    "allowed_values": [
+      "proposed",
+      "incubating",
+      "active",
+      "maintenance",
+      "deprecated",
+      "archived"
+    ],
+    "description": "Portable lifecycle mirrored from .armonia/project.yaml"
+  },
+  {
+    "property_name": "armonia_criticality",
+    "value_type": "single_select",
+    "required": true,
+    "default_value": "tier-3",
+    "allowed_values": ["tier-1", "tier-2", "tier-3", "tier-4"],
+    "description": "Operational criticality; independent from lifecycle and health"
+  },
+  {
+    "property_name": "armonia_profile",
+    "value_type": "single_select",
+    "required": true,
+    "default_value": "baseline",
+    "allowed_values": ["experimental", "baseline", "production", "high-assurance"],
+    "description": "Active Armonìa policy profile"
+  },
+  {
+    "property_name": "armonia_version",
+    "value_type": "string",
+    "required": false,
+    "description": "Resolved Armonìa specification or distribution version"
+  }
+]

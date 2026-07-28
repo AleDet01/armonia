@@ -1,0 +1,15 @@
+apiVersion: armonia/v1
+kind: PolicyProfile
+metadata:
+  id: baseline
+  description: Default quality floor for maintained repositories.
+rules:
+  - id: repository.readme-required
+  - id: repository.agents-required
+  - id: repository.lock-required
+  - id: repository.tests-declared
+  - id: github.workflow-required
+  - id: github.permissions-explicit
+  - id: github.distribution-required
+  - id: github.distribution-pinned
+  - id: security.actions-pinned

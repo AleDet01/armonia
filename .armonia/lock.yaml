@@ -1,0 +1,41 @@
+apiVersion: "armonia/v1"
+kind: "Lock"
+generatedBy: "armonia-cli/1.0.0-rc.1"
+packs:
+  -
+    id: "core"
+    version: "1.0.0"
+  -
+    id: "language/typescript"
+    version: "1.0.0"
+  -
+    id: "archetype/cli"
+    version: "1.0.0"
+  -
+    id: "governance/open-source"
+    version: "1.0.0"
+files:
+  .editorconfig:
+    source: "core@1.0.0:templates/editorconfig"
+    ownership: "managed"
+    hash: "a6b98ea7cb6d61ed8d430dd0dffa46c87012b5cf859d4ce7207898954951fdcd"
+  .gitattributes:
+    source: "core@1.0.0:templates/gitattributes"
+    ownership: "managed"
+    hash: "8f7b93764ff6d100763518cdc8efc9f9bb221ab6f0b18c13eb23fac84aae58b5"
+  .github/pull_request_template.md:
+    source: "core@1.0.0:templates/pull_request_template.md"
+    ownership: "scaffold"
+    hash: "b86e56450033f82f91713ea412f663f4fe143f87f161f34605cda6f4b076886c"
+  AGENTS.md:
+    source: "core@1.0.0:templates/AGENTS.md.tmpl"
+    ownership: "scaffold"
+    hash: "7c68e83f90d5f5ab2825fa20a87f2be309a0f0f5918bebc2dfb05213bc40f7d9"
+  docs/decisions/0000-template.md:
+    source: "core@1.0.0:templates/adr-template.md"
+    ownership: "scaffold"
+    hash: "dbed6ff4b095ad72aac0aa5bc07f83e187b2d8b3ee46dbbc506a7a0ac2a9a3b9"
+  README.md:
+    source: "core@1.0.0:templates/README.md.tmpl"
+    ownership: "scaffold"
+    hash: "a0a01ae1efd4efada3a438e3ea60ed88c97b2077bab2a183b103d8f8675b92d4"

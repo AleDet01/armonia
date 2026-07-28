@@ -1,0 +1,13 @@
+apiVersion: armonia/v1
+kind: Pack
+metadata:
+  id: language/java
+  version: 1.0.0
+  description: Java adapter with explicit project-owned commands.
+compatibility:
+  spec: ^1
+requires:
+  - id: core
+    version: 1.0.0
+provides:
+  - language/java

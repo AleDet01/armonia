@@ -1,0 +1,25 @@
+apiVersion: armonia/v1
+kind: Pack
+metadata:
+  id: language/typescript
+  version: 1.0.0
+  description: Node.js and TypeScript capability defaults using package scripts.
+compatibility:
+  spec: ^1
+requires:
+  - id: core
+    version: 1.0.0
+provides:
+  - language/typescript
+defaults:
+  capabilities:
+    setup:
+      argv: [npm, ci]
+    lint:
+      argv: [npm, run, lint]
+    typecheck:
+      argv: [npm, run, check]
+    test:
+      argv: [npm, test]
+    build:
+      argv: [npm, run, build]

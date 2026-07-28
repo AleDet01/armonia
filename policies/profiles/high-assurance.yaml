@@ -1,0 +1,22 @@
+apiVersion: armonia/v1
+kind: PolicyProfile
+metadata:
+  id: high-assurance
+  description: Strict controls for critical or sensitive software.
+rules:
+  - id: repository.readme-required
+  - id: repository.agents-required
+  - id: repository.lock-required
+  - id: repository.tests-declared
+    severity: error
+  - id: github.workflow-required
+    severity: error
+  - id: github.permissions-explicit
+    severity: error
+  - id: github.distribution-required
+    severity: error
+  - id: github.distribution-pinned
+    severity: error
+  - id: security.actions-pinned
+    severity: error
+  - id: security.security-file-required

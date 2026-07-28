@@ -1,0 +1,45 @@
+{
+  "name": "@armonia-framework/cli",
+  "version": "1.0.0-rc.1",
+  "description": "Language-independent repository governance and developer-experience framework.",
+  "type": "module",
+  "bin": {
+    "armonia": "./src/cli.ts"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src",
+    "spec",
+    "packs",
+    "policies",
+    "ai",
+    "migrations",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "scripts": {
+    "check": "node --check src/cli.ts && node src/cli.ts version",
+    "test": "node --test test/core.test.ts test/cli.test.ts",
+    "verify": "pnpm run check && pnpm run test && node src/cli.ts validate .",
+    "armonia": "node src/cli.ts",
+    "prepack": "pnpm run verify"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "packageManager": "pnpm@11.7.0",
+  "dependencies": {},
+  "devDependencies": {},
+  "license": "Apache-2.0",
+  "keywords": [
+    "repository",
+    "governance",
+    "developer-experience",
+    "github-actions",
+    "coding-agents",
+    "ai"
+  ]
+}

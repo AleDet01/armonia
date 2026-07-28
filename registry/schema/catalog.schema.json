@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Armonìa derived repository catalog",
+  "type": "object",
+  "required": ["generatedAt", "repositories"],
+  "properties": {
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "repositories": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "lifecycle", "profile", "conformance"],
+        "properties": {
+          "id": { "type": "string" },
+          "lifecycle": { "type": "string" },
+          "profile": { "type": "string" },
+          "conformance": { "enum": ["discovered", "registered", "conformant", "automated", "hardened"] },
+          "diagnostics": { "type": "array" }
+        }
+      }
+    }
+  }
+}
