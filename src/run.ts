@@ -7,6 +7,7 @@ import { effectiveCapabilities, resolvePacks } from "./resolver.ts";
 export interface RunOptions {
   component?: string;
   dryRun?: boolean;
+  timeout?: number;
 }
 
 export interface RunResult {
@@ -74,6 +75,7 @@ export async function runCapability(
   if (!executable) {
     throw new ArmoniaError("ARM053", `Capability ${capability} has an empty argv`);
   }
+  const timeoutMs = options.timeout ?? 0;
   const exitCode = await new Promise<number>((fulfill, reject) => {
     const child = spawn(executable, args, {
       cwd,
@@ -81,8 +83,32 @@ export async function runCapability(
       shell: false,
       stdio: "inherit"
     });
-    child.once("error", reject);
-    child.once("exit", (code) => fulfill(code ?? 1));
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let killTimer: ReturnType<typeof setTimeout> | undefined;
+    if (timeoutMs > 0) {
+      timer = setTimeout(() => {
+        child.kill("SIGTERM");
+        killTimer = setTimeout(() => {
+          if (!child.killed) {
+            child.kill("SIGKILL");
+          }
+        }, 5000);
+        killTimer.unref();
+      }, timeoutMs);
+      timer.unref();
+    }
+    const cleanup = () => {
+      if (timer) clearTimeout(timer);
+      if (killTimer) clearTimeout(killTimer);
+    };
+    child.once("error", (err) => {
+      cleanup();
+      reject(err);
+    });
+    child.once("exit", (code) => {
+      cleanup();
+      fulfill(code ?? 1);
+    });
   });
 
   return {

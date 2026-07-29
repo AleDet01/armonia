@@ -3,14 +3,16 @@
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { applyPlan } from "./apply.ts";
+import { diffProject, formatDiff } from "./diff.ts";
 import { doctorProject } from "./doctor.ts";
 import { getPolicyDefinition } from "./policy.ts";
 import { initializeProject } from "./initialize.ts";
-import { loadProjectManifest } from "./manifest.ts";
+import { loadProjectManifest, loadLockFile } from "./manifest.ts";
 import { migrateProject } from "./migrate.ts";
 import { createPlan } from "./planner.ts";
 import { effectiveCapabilities, resolvePacks } from "./resolver.ts";
 import { runCapability, runPipeline } from "./run.ts";
+import { projectStatus, formatStatus } from "./status.ts";
 import { validateProject } from "./validate.ts";
 import { ArmoniaError } from "./errors.ts";
 import type { Diagnostic, Plan, ProjectManifest } from "./types.ts";
@@ -106,6 +108,13 @@ function publicPlan(plan: Plan): unknown {
       version: manifest.metadata.version
     })),
     entries: plan.entries.map(({ desiredContent: _content, ...entry }) => entry),
+    summary: {
+      create: plan.entries.filter((e) => e.action === "create").length,
+      update: plan.entries.filter((e) => e.action === "update").length,
+      unchanged: plan.entries.filter((e) => e.action === "unchanged").length,
+      skip: plan.entries.filter((e) => e.action === "skip").length,
+      conflict: plan.entries.filter((e) => e.action === "conflict").length,
+    },
     diagnostics: plan.diagnostics
   };
 }
@@ -119,7 +128,9 @@ Usage:
 Commands:
   init [path]          Initialize a new governed repository
   adopt [path]         Detect and adopt an existing repository
+  status [path]        Show a concise project health summary
   inspect [path]       Show manifest, packs, components, and capabilities
+  diff [path]          Show divergence between observed and desired state
   validate [path]      Validate schema, packs, policies, and conflicts
   doctor [path]        Validate plus toolchain and generated-drift checks
   plan [path]          Preview generated-file changes
@@ -146,7 +157,7 @@ Mutation options:
   --apply              Apply an upgrade or migration preview
 
 Run options:
-  --component <id> --dry-run`;
+  --component <id> --dry-run --timeout <ms>`;
 }
 
 function manifestOptions(args: ParsedArguments): Parameters<typeof initializeProject>[1] {
@@ -232,6 +243,28 @@ export async function runCli(argv = process.argv.slice(2)): Promise<number> {
       case "inspect":
         print(await inspectProject(resolve(args.positionals[0] ?? optionString(args, "root") ?? ".")), json);
         return 0;
+      case "status": {
+        const summary = await projectStatus(
+          resolve(args.positionals[0] ?? optionString(args, "root") ?? ".")
+        );
+        if (json) {
+          print(summary, true);
+        } else {
+          print(formatStatus(summary), false);
+        }
+        return summary.healthy ? 0 : 1;
+      }
+      case "diff": {
+        const diffResult = await diffProject(
+          resolve(args.positionals[0] ?? optionString(args, "root") ?? ".")
+        );
+        if (json) {
+          print(diffResult, true);
+        } else {
+          print(formatDiff(diffResult), false);
+        }
+        return diffResult.clean ? 0 : 1;
+      }
       case "validate": {
         const result = await validateProject(
           resolve(args.positionals[0] ?? optionString(args, "root") ?? ".")
@@ -265,12 +298,15 @@ export async function runCli(argv = process.argv.slice(2)): Promise<number> {
         if (!capability) {
           throw new ArmoniaError("ARM070", "run requires a capability name");
         }
+        const timeoutStr = optionString(args, "timeout");
+        const timeout = timeoutStr ? Number(timeoutStr) : 0;
         const result = await runCapability(
           resolve(optionString(args, "root") ?? "."),
           capability,
           {
             component: optionString(args, "component"),
-            dryRun: optionBoolean(args, "dry-run")
+            dryRun: optionBoolean(args, "dry-run"),
+            timeout: timeout > 0 ? timeout : undefined
           }
         );
         if (optionBoolean(args, "dry-run") || json) {
@@ -306,14 +342,42 @@ export async function runCli(argv = process.argv.slice(2)): Promise<number> {
       case "explain": {
         const id = args.positionals[0];
         if (!id) {
-          throw new ArmoniaError("ARM071", "explain requires a policy rule ID");
+          throw new ArmoniaError("ARM071", "explain requires a policy rule ID or file path");
         }
         const definition = await getPolicyDefinition(id);
-        if (!definition) {
-          throw new ArmoniaError("ARM072", `Unknown policy rule: ${id}`);
+        if (definition) {
+          print(definition, json);
+          return 0;
         }
-        print(definition, json);
-        return 0;
+        // Try as file path — explain provenance
+        const explainRoot = resolve(optionString(args, "root") ?? ".");
+        const plan = await createPlan(explainRoot);
+        const entry = plan.entries.find((e) => e.path === id);
+        if (entry) {
+          print({
+            file: entry.path,
+            action: entry.action,
+            ownership: entry.ownership,
+            source: entry.source,
+            reason: entry.reason,
+            pack: entry.source.split("@")[0] ?? "unknown"
+          }, json);
+          return 0;
+        }
+        const lock = await loadLockFile(explainRoot);
+        const lockEntry = lock?.files[id];
+        if (lockEntry) {
+          print({
+            file: id,
+            status: "managed",
+            source: lockEntry.source,
+            ownership: lockEntry.ownership,
+            hash: lockEntry.hash,
+            pack: lockEntry.source.split("@")[0] ?? "unknown"
+          }, json);
+          return 0;
+        }
+        throw new ArmoniaError("ARM072", `Unknown policy rule or unmanaged file: ${id}`);
       }
       default:
         throw new ArmoniaError("ARM073", `Unknown command: ${args.command}`);

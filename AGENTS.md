@@ -21,10 +21,12 @@ CLI.
 
 ## Canonical commands
 
-- `node src/cli.ts version`
-- `node --test test/core.test.ts test/cli.test.ts`
-- `node src/cli.ts validate .`
-- `node src/cli.ts doctor .`
+- `node --experimental-strip-types src/cli.ts version`
+- `node --experimental-strip-types --test test/core.test.ts test/cli.test.ts test/security.test.ts`
+- `node --experimental-strip-types src/cli.ts validate .`
+- `node --experimental-strip-types src/cli.ts status .`
+- `node --experimental-strip-types src/cli.ts diff .`
+- `node --experimental-strip-types src/cli.ts doctor .`
 - `pnpm verify`
 
 ## Architectural invariants

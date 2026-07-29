@@ -43,8 +43,8 @@ spec:
         lint:
           argv:
             - "node"
+            - "--check"
             - "src/cli.ts"
-            - "version"
         test:
           argv:
             - "node"

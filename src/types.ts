@@ -117,6 +117,7 @@ export interface LockFile {
   apiVersion: "armonia/v1";
   kind: "Lock";
   generatedBy: string;
+  generatedAt?: string;
   packs: Array<{ id: string; version: string }>;
   files: Record<string, LockFileEntry>;
 }

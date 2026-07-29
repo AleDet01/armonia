@@ -9,6 +9,7 @@
     "apiVersion": { "const": "armonia/v1" },
     "kind": { "const": "Lock" },
     "generatedBy": { "type": "string", "minLength": 1 },
+    "generatedAt": { "type": "string", "minLength": 1 },
     "packs": {
       "type": "array",
       "items": {

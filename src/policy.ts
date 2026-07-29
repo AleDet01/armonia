@@ -137,8 +137,18 @@ async function runCheck(
         : [{ message: definition.description, path: ".armonia/project.yaml" }];
     }
     case "distribution-pinned": {
-      const reference = manifest.spec.distribution?.ref;
-      return !reference || /^[a-f0-9]{40}$/i.test(reference)
+      const distribution = manifest.spec.distribution;
+      if (!distribution) {
+        return [];
+      }
+      const reference = distribution.ref;
+      if (!reference || !reference.trim()) {
+        return [{
+          message: "Distribution is declared but ref is empty or missing",
+          path: ".armonia/project.yaml"
+        }];
+      }
+      return /^[a-f0-9]{40}$/i.test(reference)
         ? []
         : [{
             message: `Distribution ref ${reference} is mutable or is not a full commit SHA`,

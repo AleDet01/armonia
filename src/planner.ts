@@ -1,4 +1,5 @@
 import { isAbsolute, relative, resolve } from "node:path";
+import { realpath } from "node:fs/promises";
 import { ArmoniaError } from "./errors.ts";
 import { exists, hashContent, readText } from "./fs.ts";
 import { loadLockFile, loadProjectManifest } from "./manifest.ts";
@@ -21,6 +22,20 @@ function safePath(root: string, candidate: string, label: string): string {
     throw new ArmoniaError("ARM030", `${label} escapes its allowed root: ${candidate}`);
   }
   return fullPath;
+}
+
+async function safeSourcePath(root: string, candidate: string, label: string): Promise<string> {
+  const fullPath = safePath(root, candidate, label);
+  if (!(await exists(fullPath))) {
+    return fullPath;
+  }
+  const resolved = await realpath(fullPath);
+  const resolvedRoot = await realpath(root).catch(() => resolve(root));
+  const rel = relative(resolvedRoot, resolved);
+  if (rel.startsWith("..") || isAbsolute(rel)) {
+    throw new ArmoniaError("ARM030", `${label} escapes its allowed root via symlink: ${candidate}`);
+  }
+  return resolved;
 }
 
 async function planFile(
@@ -51,7 +66,7 @@ async function planFile(
     };
   }
 
-  const sourcePath = safePath(pack.directory, file.source, "Pack source");
+  const sourcePath = await safeSourcePath(pack.directory, file.source, "Pack source");
   if (!(await exists(sourcePath))) {
     throw new ArmoniaError("ARM031", `Pack file source not found: ${sourcePath}`);
   }

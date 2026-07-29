@@ -67,6 +67,8 @@ database.
 - project manifests are trusted repository configuration;
 - remote repositories and refs are untrusted until explicitly pinned;
 - pack templates are data, not executable code;
+- pack template sources are symlink-resolved and boundary-checked;
+- manifest values are validated against template marker injection;
 - capability commands are project-owned executable configuration;
 - pull-request workflows use read-only permissions by default;
 - release and deployment are isolated privileged paths;

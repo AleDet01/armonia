@@ -4,4 +4,6 @@ export * from "./manifest.ts";
 export * from "./resolver.ts";
 export * from "./planner.ts";
 export * from "./policy.ts";
+export * from "./status.ts";
+export * from "./diff.ts";
 export * from "./detect.ts";

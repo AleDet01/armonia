@@ -18,12 +18,19 @@ function context(manifest: ProjectManifest): Record<string, string> {
 
 export function renderTemplate(source: string, manifest: ProjectManifest): string {
   const values = context(manifest);
-  return source.replace(/<<armonia:([A-Za-z0-9_.-]+)>>/g, (_match, key: string) => {
+  const rendered = source.replace(/<<armonia:([A-Za-z0-9_.-]+)>>/g, (_match, key: string) => {
     if (!(key in values)) {
       throw new ArmoniaError("ARM020", `Unknown template variable: ${key}`);
     }
     return values[key] ?? "";
   });
+  if (/<<armonia:[A-Za-z0-9_.-]+>>/.test(rendered)) {
+    throw new ArmoniaError(
+      "ARM022",
+      "Template variable substitution produced further template markers; manifest values must not contain <<armonia:...>> patterns"
+    );
+  }
+  return rendered;
 }
 
 export function conditionMatches(condition: string | undefined, manifest: ProjectManifest): boolean {
