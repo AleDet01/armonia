@@ -88,6 +88,7 @@ export interface PackManifest {
     id: string;
     version: string;
     description?: string;
+    markers?: string[];
   };
   compatibility: {
     spec: string;

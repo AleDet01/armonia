@@ -23,7 +23,7 @@
   "scripts": {
     "check": "node --experimental-strip-types src/cli.ts version",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test test/core.test.ts test/cli.test.ts test/security.test.ts",
+    "test": "node --experimental-strip-types --test test/core.test.ts test/cli.test.ts test/security.test.ts test/yaml.test.ts",
     "verify": "pnpm run check && pnpm run typecheck && pnpm run test && node --experimental-strip-types src/cli.ts validate .",
     "armonia": "node --experimental-strip-types src/cli.ts",
     "prepack": "pnpm run verify"

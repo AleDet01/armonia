@@ -4,6 +4,7 @@ metadata:
   id: language/python
   version: 1.0.0
   description: Conservative Python capability defaults; projects can override every command.
+  markers: [pyproject.toml, requirements.txt, setup.py, Pipfile]
 compatibility:
   spec: ^1
 requires:

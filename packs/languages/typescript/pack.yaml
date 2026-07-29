@@ -4,6 +4,7 @@ metadata:
   id: language/typescript
   version: 1.0.0
   description: Node.js and TypeScript capability defaults using package scripts.
+  markers: [package.json, tsconfig.json]
 compatibility:
   spec: ^1
 requires:

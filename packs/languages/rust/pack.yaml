@@ -4,6 +4,7 @@ metadata:
   id: language/rust
   version: 1.0.0
   description: Rust and Cargo capability defaults.
+  markers: [Cargo.toml]
 compatibility:
   spec: ^1
 requires:

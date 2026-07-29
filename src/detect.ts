@@ -10,27 +10,67 @@ import type {
   ProjectManifest
 } from "./types.ts";
 
-const markers: Array<{ language: string; files: string[] }> = [
+/**
+ * Fallback markers for language detection when pack markers are not available.
+ * New languages should declare markers in their pack.yaml instead of here.
+ */
+const fallbackMarkers: Array<{ language: string; files: string[]; patterns?: RegExp[] }> = [
   { language: "python", files: ["pyproject.toml", "requirements.txt", "setup.py"] },
   { language: "typescript", files: ["package.json", "tsconfig.json"] },
   { language: "rust", files: ["Cargo.toml"] },
   { language: "go", files: ["go.mod"] },
-  { language: "dotnet", files: [] },
+  { language: "dotnet", files: [], patterns: [/\.(sln|csproj|fsproj)$/i] },
   { language: "java", files: ["pom.xml", "build.gradle", "build.gradle.kts"] }
 ];
 
+async function loadPackMarkers(): Promise<Map<string, string[]>> {
+  const result = new Map<string, string[]>();
+  for (const marker of fallbackMarkers) {
+    const path = builtInPackPath(`language/${marker.language}`);
+    if (await exists(path)) {
+      try {
+        const pack = await readYaml<PackManifest>(path);
+        if (pack.metadata.markers && pack.metadata.markers.length > 0) {
+          result.set(marker.language, pack.metadata.markers);
+          continue;
+        }
+      } catch {
+        // Fall through to default markers
+      }
+    }
+    result.set(marker.language, marker.files);
+  }
+  return result;
+}
+
+function matchesMarker(fileName: string, marker: string): boolean {
+  if (marker.startsWith("*.")) {
+    return fileName.endsWith(marker.slice(1));
+  }
+  return fileName === marker;
+}
+
 export async function detectLanguages(projectRoot: string): Promise<Detection[]> {
   const names = await readdir(projectRoot).catch(() => [] as string[]);
+  const packMarkers = await loadPackMarkers();
   const detections: Detection[] = [];
 
-  for (const marker of markers) {
-    const evidence = marker.files.filter((file) => names.includes(file));
-    if (marker.language === "dotnet") {
-      evidence.push(...names.filter((name) => /\.(sln|csproj|fsproj)$/i.test(name)));
+  for (const [language, markers] of packMarkers) {
+    const evidence = names.filter((name) =>
+      markers.some((marker) => matchesMarker(name, marker))
+    );
+    // Also check fallback patterns (for dotnet glob patterns in filenames)
+    const fallback = fallbackMarkers.find((m) => m.language === language);
+    if (fallback?.patterns) {
+      for (const name of names) {
+        if (fallback.patterns.some((p) => p.test(name)) && !evidence.includes(name)) {
+          evidence.push(name);
+        }
+      }
     }
     if (evidence.length > 0) {
       detections.push({
-        language: marker.language,
+        language,
         evidence,
         confidence: evidence.length > 1 ? 1 : 0.9
       });

@@ -1,0 +1,315 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-07-29T12:00:00.000Z" agent="Armonia" version="24.0.0" type="device">
+  <diagram id="armonia-complete-flow" name="Armonìa System Flow">
+    <mxGraphModel dx="1800" dy="1200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2400" pageHeight="1600" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- TITLE -->
+        <!-- ═══════════════════════════════════════════ -->
+        <mxCell id="title" value="&lt;b&gt;Armonìa — Repository Control Plane&lt;/b&gt;&lt;br&gt;Complete System Flow" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=20;fontColor=#1a1a2e;" vertex="1" parent="1">
+          <mxGeometry x="800" y="20" width="600" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- SWIM LANES (Background) -->
+        <!-- ═══════════════════════════════════════════ -->
+        <mxCell id="lane-input" value="INPUT LAYER" style="shape=swimlane;startSize=30;fillColor=#f0f4ff;strokeColor=#4a6fa5;fontStyle=1;fontSize=11;horizontal=1;swimlaneLine=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="100" width="2320" height="200" as="geometry" />
+        </mxCell>
+
+        <mxCell id="lane-engine" value="ENGINE LAYER" style="shape=swimlane;startSize=30;fillColor=#f0fff4;strokeColor=#2d6a4f;fontStyle=1;fontSize=11;horizontal=1;swimlaneLine=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="320" width="2320" height="340" as="geometry" />
+        </mxCell>
+
+        <mxCell id="lane-output" value="OUTPUT LAYER" style="shape=swimlane;startSize=30;fillColor=#fff8f0;strokeColor=#bc6c25;fontStyle=1;fontSize=11;horizontal=1;swimlaneLine=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="680" width="2320" height="200" as="geometry" />
+        </mxCell>
+
+        <mxCell id="lane-integration" value="INTEGRATION LAYER" style="shape=swimlane;startSize=30;fillColor=#fdf0ff;strokeColor=#7b2d8b;fontStyle=1;fontSize=11;horizontal=1;swimlaneLine=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="900" width="2320" height="200" as="geometry" />
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- INPUT LAYER NODES -->
+        <!-- ═══════════════════════════════════════════ -->
+        <mxCell id="manifest" value="&lt;b&gt;project.yaml&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;identity · lifecycle · profile&lt;br&gt;packs · components · capabilities&lt;br&gt;distribution · policy exceptions&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;shadow=1;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="100" y="150" width="240" height="110" as="geometry" />
+        </mxCell>
+
+        <mxCell id="packcat" value="&lt;b&gt;Pack Catalog&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;core · language/* · archetype/*&lt;br&gt;capability/* · governance/*&lt;br&gt;21 built-in packs&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;shadow=1;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="420" y="150" width="240" height="110" as="geometry" />
+        </mxCell>
+
+        <mxCell id="policycat" value="&lt;b&gt;Policy Catalog&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;10 atomic rules&lt;br&gt;4 profiles: experimental · baseline&lt;br&gt;production · high-assurance&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;shadow=1;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="740" y="150" width="240" height="110" as="geometry" />
+        </mxCell>
+
+        <mxCell id="lockfile-in" value="&lt;b&gt;lock.yaml&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;resolved packs · file hashes&lt;br&gt;ownership · provenance&lt;br&gt;generatedAt · generatedBy&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;shadow=1;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1060" y="150" width="240" height="110" as="geometry" />
+        </mxCell>
+
+        <mxCell id="filesystem" value="&lt;b&gt;Repository Filesystem&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;observed state&lt;br&gt;existing files · hashes&lt;br&gt;workflows · source code&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;shadow=1;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1380" y="150" width="240" height="110" as="geometry" />
+        </mxCell>
+
+        <mxCell id="schemas" value="&lt;b&gt;JSON Schemas&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;project · pack · lock · policy&lt;br&gt;Draft 2020-12&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;shadow=1;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1700" y="150" width="200" height="110" as="geometry" />
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- ENGINE LAYER NODES -->
+        <!-- ═══════════════════════════════════════════ -->
+
+        <!-- Parse & Validate -->
+        <mxCell id="parse" value="&lt;b&gt;1. Parse &amp; Validate&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;YAML parser · schema validation&lt;br&gt;manifest.ts · schema.ts · yaml.ts&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;shadow=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="100" y="380" width="260" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- Resolve -->
+        <mxCell id="resolve" value="&lt;b&gt;2. Resolve DAG&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;exact versions · dependencies&lt;br&gt;cycles · conflicts · provides&lt;br&gt;resolver.ts&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;shadow=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="440" y="380" width="260" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- Template Render -->
+        <mxCell id="render" value="&lt;b&gt;3. Template Render&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;variable substitution&lt;br&gt;injection guard (ARM022)&lt;br&gt;condition evaluation&lt;br&gt;template.ts&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;shadow=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="780" y="380" width="260" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- Planner -->
+        <mxCell id="planner" value="&lt;b&gt;4. Plan&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;compare desired vs observed&lt;br&gt;ownership semantics&lt;br&gt;create · update · unchanged&lt;br&gt;skip · conflict · orphan&lt;br&gt;planner.ts&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;shadow=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="1120" y="370" width="260" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Apply -->
+        <mxCell id="apply" value="&lt;b&gt;5. Apply&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;atomic writes (rename)&lt;br&gt;conflict rejection&lt;br&gt;lockfile update&lt;br&gt;apply.ts&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;shadow=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="1460" y="380" width="240" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- Policy Evaluation -->
+        <mxCell id="policy" value="&lt;b&gt;6. Policy Evaluation&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;rules on real state&lt;br&gt;profiles · severity · exceptions&lt;br&gt;expiry · remediation&lt;br&gt;policy.ts&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;shadow=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="1780" y="380" width="260" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- Capability Runner -->
+        <mxCell id="runner" value="&lt;b&gt;7. Capability Runner&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;shell: false · argv array&lt;br&gt;cwd validated · timeout · signals&lt;br&gt;setup→format→lint→typecheck→test→build&lt;br&gt;run.ts&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;shadow=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="100" y="530" width="320" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- Security Boundary -->
+        <mxCell id="security" value="&lt;b&gt;Security Boundaries&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;• path traversal blocked (safePath)&lt;br&gt;• symlink resolved (realpath)&lt;br&gt;• template injection guard (ARM022)&lt;br&gt;• no shell interpolation&lt;br&gt;• pack = data, not code&lt;br&gt;• immutable distribution refs&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;shadow=1;arcSize=8;dashed=1;dashPattern=5 3;" vertex="1" parent="1">
+          <mxGeometry x="500" y="520" width="300" height="110" as="geometry" />
+        </mxCell>
+
+        <!-- Ownership Model -->
+        <mxCell id="ownership" value="&lt;b&gt;Ownership Model&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;&lt;b&gt;managed&lt;/b&gt;: update if hash matches lock&lt;br&gt;&lt;b&gt;scaffold&lt;/b&gt;: create once, never overwrite&lt;br&gt;&lt;b&gt;reference&lt;/b&gt;: consume remotely, no materialize&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;shadow=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="880" y="530" width="300" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- Detect & Init -->
+        <mxCell id="detect" value="&lt;b&gt;Detect &amp; Init&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;language detection&lt;br&gt;ecosystem markers&lt;br&gt;adapted capability defaults&lt;br&gt;detect.ts · initialize.ts&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;shadow=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="1260" y="530" width="260" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- Migrate -->
+        <mxCell id="migrate" value="&lt;b&gt;Migrate&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;v0 → v1&lt;br&gt;preview · apply&lt;br&gt;migrate.ts&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;shadow=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="1600" y="540" width="180" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- Doctor -->
+        <mxCell id="doctor" value="&lt;b&gt;Doctor&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;executable discovery&lt;br&gt;generated-state drift&lt;br&gt;doctor.ts&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;shadow=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="1860" y="540" width="180" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- OUTPUT LAYER NODES -->
+        <!-- ═══════════════════════════════════════════ -->
+
+        <mxCell id="lockfile-out" value="&lt;b&gt;lock.yaml&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;evidence + overwrite guard&lt;br&gt;SHA-256 per file&lt;/font&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=8;fillColor=#fff2cc;strokeColor=#d6b656;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="100" y="720" width="180" height="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="genfiles" value="&lt;b&gt;Generated Files&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;.editorconfig · .gitattributes&lt;br&gt;AGENTS.md · README.md&lt;br&gt;workflows · PR template&lt;br&gt;ADR template&lt;/font&gt;" style="shape=document;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#fff2cc;strokeColor=#d6b656;shadow=1;size=0.15;" vertex="1" parent="1">
+          <mxGeometry x="360" y="720" width="220" height="110" as="geometry" />
+        </mxCell>
+
+        <mxCell id="diagnostics" value="&lt;b&gt;Diagnostics&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;rule · severity · message&lt;br&gt;path · remediation&lt;br&gt;exit codes: 0·1·2·3&lt;br&gt;--json output&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;shadow=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="660" y="730" width="220" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cli-out" value="&lt;b&gt;CLI Commands&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;init · adopt · status · inspect&lt;br&gt;diff · validate · doctor · plan&lt;br&gt;apply · run · ci · upgrade&lt;br&gt;migrate · explain · version&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;shadow=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="960" y="730" width="240" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="explain-out" value="&lt;b&gt;Explain &amp; Provenance&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;policy rule → definition&lt;br&gt;file path → pack · ownership&lt;br&gt;hash · source · reason&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;shadow=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="1280" y="730" width="220" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="status-out" value="&lt;b&gt;Status &amp; Diff&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;health summary&lt;br&gt;divergence report&lt;br&gt;human + JSON&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;shadow=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="1580" y="730" width="200" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="caprun-out" value="&lt;b&gt;Capability Execution&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;semantic commands&lt;br&gt;exit code propagation&lt;br&gt;CI pipeline ordering&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;shadow=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="1860" y="730" width="200" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- INTEGRATION LAYER NODES -->
+        <!-- ═══════════════════════════════════════════ -->
+        <mxCell id="ghworkflows" value="&lt;b&gt;GitHub Workflows&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;reusable-ci · reusable-validate&lt;br&gt;reusable-security · reusable-release&lt;br&gt;pinned actions (SHA)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e6d0f5;strokeColor=#7b2d8b;shadow=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="100" y="950" width="280" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ghrulesets" value="&lt;b&gt;GitHub Rulesets&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;baseline · high-assurance&lt;br&gt;branch protection&lt;br&gt;status checks&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e6d0f5;strokeColor=#7b2d8b;shadow=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="440" y="950" width="220" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ghorg" value="&lt;b&gt;Organization Properties&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;lifecycle · criticality&lt;br&gt;profile · version&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e6d0f5;strokeColor=#7b2d8b;shadow=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="720" y="950" width="220" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="aiadapters" value="&lt;b&gt;AI Agent Adapters&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;AGENTS.md (canonical)&lt;br&gt;CLAUDE.md · GEMINI.md&lt;br&gt;.cursor/rules/armonia.mdc&lt;br&gt;Codex (native)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e6d0f5;strokeColor=#7b2d8b;shadow=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="950" width="240" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="registry" value="&lt;b&gt;Fleet Registry&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;derived catalog (not authoritative)&lt;br&gt;conformance levels&lt;br&gt;read-only discovery&lt;br&gt;&lt;i&gt;post-1.0&lt;/i&gt;&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e6d0f5;strokeColor=#7b2d8b;shadow=1;arcSize=8;dashed=1;dashPattern=5 3;" vertex="1" parent="1">
+          <mxGeometry x="1300" y="950" width="240" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="issueforms" value="&lt;b&gt;Issue Forms&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;bug report&lt;br&gt;feature request&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e6d0f5;strokeColor=#7b2d8b;shadow=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="1600" y="950" width="160" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="portfolio" value="&lt;b&gt;Portfolio Fields&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;project status tracking&lt;br&gt;lifecycle · criticality · priority&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e6d0f5;strokeColor=#7b2d8b;shadow=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="1820" y="950" width="220" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- EDGES — Main Flow -->
+        <!-- ═══════════════════════════════════════════ -->
+
+        <!-- Input → Parse -->
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#4a6fa5;strokeWidth=2;" edge="1" source="manifest" target="parse" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#4a6fa5;strokeWidth=1.5;" edge="1" source="schemas" target="parse" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Parse → Resolve -->
+        <mxCell id="e3" value="manifest" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#2d6a4f;strokeWidth=2;fontStyle=0;fontSize=9;" edge="1" source="parse" target="resolve" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Pack Catalog → Resolve -->
+        <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#4a6fa5;strokeWidth=1.5;" edge="1" source="packcat" target="resolve" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Resolve → Render -->
+        <mxCell id="e5" value="resolved packs" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#2d6a4f;strokeWidth=2;fontStyle=0;fontSize=9;" edge="1" source="resolve" target="render" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Render → Planner -->
+        <mxCell id="e6" value="desired files" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#2d6a4f;strokeWidth=2;fontStyle=0;fontSize=9;" edge="1" source="render" target="planner" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Filesystem → Planner -->
+        <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#4a6fa5;strokeWidth=1.5;" edge="1" source="filesystem" target="planner" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Lockfile → Planner -->
+        <mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#4a6fa5;strokeWidth=1.5;" edge="1" source="lockfile-in" target="planner" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Planner → Apply -->
+        <mxCell id="e9" value="plan" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#d6b656;strokeWidth=2.5;fontStyle=1;fontSize=9;" edge="1" source="planner" target="apply" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Apply → Lockfile out -->
+        <mxCell id="e10" value="write" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#d6b656;strokeWidth=2;fontStyle=0;fontSize=9;" edge="1" source="apply" target="lockfile-out" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Apply → Generated Files -->
+        <mxCell id="e11" value="atomic write" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#d6b656;strokeWidth=2;fontStyle=0;fontSize=9;" edge="1" source="apply" target="genfiles" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Policy Catalog → Policy -->
+        <mxCell id="e12" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#4a6fa5;strokeWidth=1.5;" edge="1" source="policycat" target="policy" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Policy → Diagnostics -->
+        <mxCell id="e13" value="diagnostics" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#bc6c25;strokeWidth=2;fontStyle=0;fontSize=9;" edge="1" source="policy" target="diagnostics" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Runner → Cap Execution -->
+        <mxCell id="e14" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#bc6c25;strokeWidth=1.5;" edge="1" source="runner" target="caprun-out" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- LEGEND -->
+        <!-- ═══════════════════════════════════════════ -->
+
+        <!-- Legend Box -->
+        <mxCell id="legend-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fafafa;strokeColor=#666666;dashed=1;arcSize=4;" vertex="1" parent="1">
+          <mxGeometry x="1700" y="1120" width="640" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-title" value="&lt;b&gt;LEGEND&lt;/b&gt;" style="text;html=1;align=left;verticalAlign=top;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1720" y="1130" width="100" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="leg1" value="" style="rounded=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="1720" y="1160" width="20" height="14" as="geometry" />
+        </mxCell>
+        <mxCell id="leg1t" value="Input / Data source" style="text;html=1;align=left;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1750" y="1157" width="120" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="leg2" value="" style="rounded=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="1720" y="1185" width="20" height="14" as="geometry" />
+        </mxCell>
+        <mxCell id="leg2t" value="Read-only engine component" style="text;html=1;align=left;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1750" y="1182" width="160" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="leg3" value="" style="rounded=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="1720" y="1210" width="20" height="14" as="geometry" />
+        </mxCell>
+        <mxCell id="leg3t" value="Mutating component / Output" style="text;html=1;align=left;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1750" y="1207" width="160" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="leg4" value="" style="rounded=1;fillColor=#f8cecc;strokeColor=#b85450;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="1720" y="1235" width="20" height="14" as="geometry" />
+        </mxCell>
+        <mxCell id="leg4t" value="Security boundary / Trust guard" style="text;html=1;align=left;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1750" y="1232" width="180" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="leg5" value="" style="rounded=1;fillColor=#e6d0f5;strokeColor=#7b2d8b;" vertex="1" parent="1">
+          <mxGeometry x="1720" y="1260" width="20" height="14" as="geometry" />
+        </mxCell>
+        <mxCell id="leg5t" value="Integration / External projection" style="text;html=1;align=left;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1750" y="1257" width="180" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="leg6" value="" style="rounded=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="1960" y="1160" width="20" height="14" as="geometry" />
+        </mxCell>
+        <mxCell id="leg6t" value="Core concept / Model" style="text;html=1;align=left;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1990" y="1157" width="140" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="leg7t" value="&lt;font style=&quot;font-size:9px&quot;&gt;─── thick arrow = main data flow&lt;br&gt;─── thin arrow = reference/lookup&lt;br&gt;- - - dashed = planned / future&lt;/font&gt;" style="text;html=1;align=left;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="1960" y="1185" width="200" height="60" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

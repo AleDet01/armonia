@@ -33,7 +33,6 @@ export async function applyPlan(plan: Plan, force = false): Promise<ApplyResult>
     apiVersion: "armonia/v1",
     kind: "Lock",
     generatedBy: "armonia-cli/1.0.0-rc.1",
-    generatedAt: new Date().toISOString(),
     packs: plan.packs.map(({ manifest }) => ({
       id: manifest.metadata.id,
       version: manifest.metadata.version
@@ -79,8 +78,7 @@ export async function applyPlan(plan: Plan, force = false): Promise<ApplyResult>
   const lockPath = resolve(plan.projectRoot, LOCK_PATH);
   const desiredLock = serializeYaml(lock);
   const currentLock = (await exists(lockPath)) ? await readText(lockPath) : undefined;
-  const normalize = (s: string) => s.replace(/\r\n/g, "\n").replace(/^generatedAt:.*\n/m, "");
-  if (!currentLock || normalize(currentLock) !== normalize(desiredLock)) {
+  if (!currentLock || currentLock.replace(/\r\n/g, "\n") !== desiredLock) {
     await writeTextAtomic(lockPath, desiredLock);
     result.lockChanged = true;
   }

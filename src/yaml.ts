@@ -1,6 +1,11 @@
 import { readText, writeTextAtomic } from "./fs.ts";
 import { ArmoniaError } from "./errors.ts";
 
+/** Maximum nesting depth to prevent DoS via deeply nested input */
+const MAX_DEPTH = 64;
+/** Maximum document size in bytes */
+const MAX_SIZE = 1_048_576; // 1 MB
+
 interface Line {
   indent: number;
   content: string;
@@ -97,6 +102,22 @@ function tokenize(source: string): Line[] {
 }
 
 function parseDocument(source: string): unknown {
+  if (source.length > MAX_SIZE) {
+    throw new ArmoniaError("ARM001", `YAML document exceeds maximum size of ${MAX_SIZE} bytes`);
+  }
+  // Reject unsupported YAML features that could cause ambiguity or security issues
+  if (/^%/.test(source.trim())) {
+    throw new ArmoniaError("ARM001", "YAML directives (%YAML, %TAG) are not supported");
+  }
+  if (/[&*]\w/.test(source) && /&\w+/.test(source)) {
+    // Basic heuristic: check for anchor definitions
+    if (/^\s*\w+\s*:.*&\w+/m.test(source) || /^\s*-\s*&\w+/m.test(source)) {
+      throw new ArmoniaError("ARM001", "YAML anchors and aliases (&, *) are not supported in Armonìa manifests");
+    }
+  }
+  if (/!!(?:python|ruby|js|binary|merge|omap)/.test(source)) {
+    throw new ArmoniaError("ARM001", "YAML tags (!!type) are not supported in Armonìa manifests");
+  }
   const trimmed = source.trim();
   if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
     return JSON.parse(trimmed) as unknown;
@@ -104,14 +125,24 @@ function parseDocument(source: string): unknown {
   const lines = tokenize(source);
   if (lines.length === 0) return {};
 
+  let depth = 0;
+
   function parseNode(index: number, indent: number): [unknown, number] {
-    const line = lines[index];
-    if (!line || line.indent !== indent) {
-      throw new ArmoniaError("ARM001", `Invalid YAML indentation near line ${line?.number ?? "EOF"}`);
+    depth += 1;
+    if (depth > MAX_DEPTH) {
+      throw new ArmoniaError("ARM001", `YAML nesting exceeds maximum depth of ${MAX_DEPTH}`);
     }
-    return line.content === "-" || line.content.startsWith("- ")
-      ? parseSequence(index, indent)
-      : parseMap(index, indent);
+    try {
+      const line = lines[index];
+      if (!line || line.indent !== indent) {
+        throw new ArmoniaError("ARM001", `Invalid YAML indentation near line ${line?.number ?? "EOF"}`);
+      }
+      return line.content === "-" || line.content.startsWith("- ")
+        ? parseSequence(index, indent)
+        : parseMap(index, indent);
+    } finally {
+      depth -= 1;
+    }
   }
 
   function parseBlockScalar(start: number, parentIndent: number, folded: boolean): [string, number] {

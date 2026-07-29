@@ -4,6 +4,7 @@ metadata:
   id: language/dotnet
   version: 1.0.0
   description: .NET SDK capability defaults.
+  markers: ["*.sln", "*.csproj", "*.fsproj"]
 compatibility:
   spec: ^1
 requires:

@@ -4,6 +4,7 @@ metadata:
   id: language/go
   version: 1.0.0
   description: Go module capability defaults.
+  markers: [go.mod]
 compatibility:
   spec: ^1
 requires:

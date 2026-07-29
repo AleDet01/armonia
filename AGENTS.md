@@ -22,7 +22,7 @@ CLI.
 ## Canonical commands
 
 - `node --experimental-strip-types src/cli.ts version`
-- `node --experimental-strip-types --test test/core.test.ts test/cli.test.ts test/security.test.ts`
+- `node --experimental-strip-types --test test/core.test.ts test/cli.test.ts test/security.test.ts test/yaml.test.ts`
 - `node --experimental-strip-types src/cli.ts validate .`
 - `node --experimental-strip-types src/cli.ts status .`
 - `node --experimental-strip-types src/cli.ts diff .`
