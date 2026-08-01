@@ -21,7 +21,16 @@ export interface RunResult {
 export interface PipelineOptions {
   dryRun?: boolean;
   capabilities?: string[];
+  timeout?: number;
 }
+
+/**
+ * Capability sequence used by `armonia ci`.
+ *
+ * `verify` is deliberately excluded because it is a project's own aggregate gate and would
+ * duplicate the steps above. `release` and `deploy` are privileged and never run here.
+ */
+export const DEFAULT_PIPELINE = ["setup", "format", "lint", "typecheck", "test", "build"] as const;
 
 function inside(root: string, path: string): boolean {
   const rel = relative(resolve(root), resolve(path));
@@ -36,15 +45,28 @@ export async function runCapability(
   const root = resolve(projectRoot);
   const manifest = await loadProjectManifest(root);
   const packs = await resolvePacks(root, manifest);
-  const component =
-    manifest.spec.components.find((candidate) => candidate.id === options.component) ??
-    (options.component ? undefined : manifest.spec.components[0]);
+  const components = manifest.spec.components;
+  if (!options.component && components.length > 1) {
+    // Silently running only the first component of a polyglot repository would report success
+    // while leaving most of it unverified.
+    throw new ArmoniaError(
+      "ARM050",
+      `This repository declares ${components.length} components (${components
+        .map((candidate) => candidate.id)
+        .join(", ")}). Select one with --component, or use \`armonia ci\` to cover all of them.`
+    );
+  }
+  const component = options.component
+    ? components.find((candidate) => candidate.id === options.component)
+    : components[0];
   if (!component) {
     throw new ArmoniaError(
       "ARM050",
       options.component
-        ? `Unknown component: ${options.component}`
-        : "A component must be selected for this repository"
+        ? `Unknown component: ${options.component}. Declared components: ${components
+            .map((candidate) => candidate.id)
+            .join(", ")}`
+        : "The manifest declares no components"
     );
   }
 
@@ -127,7 +149,7 @@ export async function runPipeline(
   const root = resolve(projectRoot);
   const manifest = await loadProjectManifest(root);
   const packs = await resolvePacks(root, manifest);
-  const requested = options.capabilities ?? ["setup", "format", "lint", "typecheck", "test", "build"];
+  const requested = options.capabilities ?? [...DEFAULT_PIPELINE];
   const results: RunResult[] = [];
 
   for (const component of manifest.spec.components) {
@@ -138,7 +160,8 @@ export async function runPipeline(
       }
       const result = await runCapability(root, capability, {
         component: component.id,
-        ...(options.dryRun === undefined ? {} : { dryRun: options.dryRun })
+        ...(options.dryRun === undefined ? {} : { dryRun: options.dryRun }),
+        ...(options.timeout === undefined ? {} : { timeout: options.timeout })
       });
       results.push(result);
       if (result.exitCode !== 0) {

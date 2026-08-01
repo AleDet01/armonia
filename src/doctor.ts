@@ -1,8 +1,7 @@
 import { access } from "node:fs/promises";
 import { delimiter, extname, resolve } from "node:path";
-import { createPlan } from "./planner.ts";
-import { loadProjectManifest } from "./manifest.ts";
-import { effectiveCapabilities, resolvePacks } from "./resolver.ts";
+import { ProjectContext } from "./context.ts";
+import { effectiveCapabilities } from "./resolver.ts";
 import { validateProject } from "./validate.ts";
 import type { Diagnostic } from "./types.ts";
 
@@ -30,10 +29,11 @@ export async function doctorProject(projectRoot: string): Promise<{
   healthy: boolean;
   diagnostics: Diagnostic[];
 }> {
-  const validation = await validateProject(projectRoot);
+  const context = new ProjectContext(projectRoot);
+  const validation = await validateProject(projectRoot, context);
   const diagnostics = [...validation.diagnostics];
-  const manifest = await loadProjectManifest(projectRoot);
-  const packs = await resolvePacks(projectRoot, manifest);
+  const manifest = await context.manifest();
+  const packs = await context.packs();
 
   const checked = new Set<string>();
   for (const component of manifest.spec.components) {
@@ -56,8 +56,7 @@ export async function doctorProject(projectRoot: string): Promise<{
     }
   }
 
-  const plan = await createPlan(projectRoot);
-  for (const entry of plan.entries) {
+  for (const entry of (await context.plan()).entries) {
     if (entry.action === "create" || entry.action === "update") {
       diagnostics.push({
         rule: "repository.generated-drift",

@@ -138,11 +138,21 @@ async function planFile(
   };
 }
 
-export async function createPlan(projectRoot: string): Promise<Plan> {
+export interface PlanOptions {
+  /**
+   * Plan against an in-memory manifest instead of reading `.armonia/project.yaml`.
+   * This lets `init` and `adopt` evaluate the full outcome before writing anything to disk.
+   */
+  manifest?: ProjectManifest;
+  /** Reuse an already-resolved pack graph instead of resolving and re-validating it. */
+  packs?: ResolvedPack[];
+}
+
+export async function createPlan(projectRoot: string, options: PlanOptions = {}): Promise<Plan> {
   const root = resolve(projectRoot);
-  const manifest = await loadProjectManifest(root);
+  const manifest = options.manifest ?? (await loadProjectManifest(root));
   const lock = await loadLockFile(root);
-  const packs = await resolvePacks(root, manifest);
+  const packs = options.packs ?? (await resolvePacks(root, manifest));
   const entries: PlanEntry[] = [];
   const diagnostics: Diagnostic[] = [];
   const targets = new Map<string, string>();

@@ -6,10 +6,44 @@ const MAX_DEPTH = 64;
 /** Maximum document size in bytes */
 const MAX_SIZE = 1_048_576; // 1 MB
 
+/**
+ * Unquoted scalars that indicate YAML features Armonìa deliberately does not support.
+ * Detection happens at the scalar level rather than over the raw document so that
+ * quoted strings, comments, and block-scalar bodies cannot produce false positives.
+ */
+const ANCHOR = /^&[A-Za-z0-9_][\w.-]*$/;
+const ALIAS = /^\*[A-Za-z0-9_][\w.-]*$/;
+const TAG = /^!!?[A-Za-z]/;
+const BLOCK_INDICATOR = /^([|>])([+-]?)$/;
+const BLOCK_WITH_EXPLICIT_INDENT = /^[|>][+-]?\d/;
+
+type Chomping = "clip" | "strip" | "keep";
+
+interface BlockStyle {
+  folded: boolean;
+  chomp: Chomping;
+}
+
 interface Line {
   indent: number;
   content: string;
+  /** 1-based line number in the source document */
   number: number;
+}
+
+function blockStyle(rawValue: string): BlockStyle | undefined {
+  if (BLOCK_WITH_EXPLICIT_INDENT.test(rawValue)) {
+    throw new ArmoniaError(
+      "ARM001",
+      `Explicit block-scalar indentation indicators are not supported: ${rawValue}`
+    );
+  }
+  const match = BLOCK_INDICATOR.exec(rawValue);
+  if (!match) {
+    return undefined;
+  }
+  const chomp: Chomping = match[2] === "-" ? "strip" : match[2] === "+" ? "keep" : "clip";
+  return { folded: match[1] === ">", chomp };
 }
 
 function stripComment(source: string): string {
@@ -70,6 +104,18 @@ function keyValue(source: string): [string, string] | undefined {
 
 function scalar(source: string): unknown {
   const value = source.trim();
+  if (ANCHOR.test(value) || ALIAS.test(value)) {
+    throw new ArmoniaError(
+      "ARM001",
+      `YAML anchors and aliases (&, *) are not supported in Armonìa manifests: ${value}`
+    );
+  }
+  if (TAG.test(value)) {
+    throw new ArmoniaError(
+      "ARM001",
+      `YAML tags (!type) are not supported in Armonìa manifests: ${value}`
+    );
+  }
   if (value === "null" || value === "~") return null;
   if (value === "true") return true;
   if (value === "false") return false;
@@ -87,10 +133,11 @@ function scalar(source: string): unknown {
   return value;
 }
 
-function tokenize(source: string): Line[] {
+function tokenize(rawLines: string[]): Line[] {
   const lines: Line[] = [];
-  source.replace(/^\uFEFF/, "").split(/\r?\n/).forEach((raw, index) => {
-    if (raw.includes("\t")) {
+  rawLines.forEach((raw, index) => {
+    // Tabs are only rejected in the indentation region; block-scalar bodies may contain them.
+    if (/^ *\t/.test(raw)) {
       throw new ArmoniaError("ARM001", `Tabs are not allowed in YAML indentation at line ${index + 1}`);
     }
     const stripped = stripComment(raw);
@@ -105,24 +152,16 @@ function parseDocument(source: string): unknown {
   if (source.length > MAX_SIZE) {
     throw new ArmoniaError("ARM001", `YAML document exceeds maximum size of ${MAX_SIZE} bytes`);
   }
-  // Reject unsupported YAML features that could cause ambiguity or security issues
   if (/^%/.test(source.trim())) {
     throw new ArmoniaError("ARM001", "YAML directives (%YAML, %TAG) are not supported");
-  }
-  if (/[&*]\w/.test(source) && /&\w+/.test(source)) {
-    // Basic heuristic: check for anchor definitions
-    if (/^\s*\w+\s*:.*&\w+/m.test(source) || /^\s*-\s*&\w+/m.test(source)) {
-      throw new ArmoniaError("ARM001", "YAML anchors and aliases (&, *) are not supported in Armonìa manifests");
-    }
-  }
-  if (/!!(?:python|ruby|js|binary|merge|omap)/.test(source)) {
-    throw new ArmoniaError("ARM001", "YAML tags (!!type) are not supported in Armonìa manifests");
   }
   const trimmed = source.trim();
   if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
     return JSON.parse(trimmed) as unknown;
   }
-  const lines = tokenize(source);
+
+  const rawLines = source.replace(/^\uFEFF/, "").split(/\r?\n/);
+  const lines = tokenize(rawLines);
   if (lines.length === 0) return {};
 
   let depth = 0;
@@ -145,16 +184,69 @@ function parseDocument(source: string): unknown {
     }
   }
 
-  function parseBlockScalar(start: number, parentIndent: number, folded: boolean): [string, number] {
-    const parts: string[] = [];
-    let index = start;
-    while (index < lines.length) {
-      const line = lines[index];
-      if (!line || line.indent <= parentIndent) break;
-      parts.push(line.content);
-      index += 1;
+  /**
+   * Reads a literal (`|`) or folded (`>`) block scalar directly from the raw source lines so
+   * that comment characters, blank lines, and relative indentation are preserved verbatim.
+   *
+   * @param tokenIndex index into `lines` of the first token after the block-scalar key
+   * @param keyLineNumber 1-based source line number of the key that introduced the block
+   * @param parentIndent indentation of the key that introduced the block
+   * @returns the scalar value and the next index into `lines`
+   */
+  function parseBlockScalar(
+    tokenIndex: number,
+    keyLineNumber: number,
+    parentIndent: number,
+    style: BlockStyle
+  ): [string, number] {
+    const collected: string[] = [];
+    let rawIndex = keyLineNumber; // 0-based index of the line following the key
+    let blockIndent = -1;
+
+    while (rawIndex < rawLines.length) {
+      const raw = rawLines[rawIndex] ?? "";
+      if (raw.trim() === "") {
+        collected.push("");
+        rawIndex += 1;
+        continue;
+      }
+      const indent = raw.length - raw.trimStart().length;
+      if (indent <= parentIndent) break;
+      if (blockIndent === -1) blockIndent = indent;
+      if (indent < blockIndent) break;
+      collected.push(raw.slice(blockIndent).replace(/\s+$/, ""));
+      rawIndex += 1;
     }
-    return [`${parts.join(folded ? " " : "\n")}\n`, index];
+
+    let end = collected.length;
+    while (end > 0 && collected[end - 1] === "") end -= 1;
+    const trailingBlanks = collected.length - end;
+    const body = collected.slice(0, end);
+
+    let text = "";
+    for (let index = 0; index < body.length; index += 1) {
+      const line = body[index] ?? "";
+      if (index > 0) {
+        const previous = body[index - 1] ?? "";
+        const foldable =
+          style.folded && previous !== "" && line !== "" && !/^\s/.test(previous) && !/^\s/.test(line);
+        text += foldable ? " " : "\n";
+      }
+      text += line;
+    }
+
+    if (style.chomp === "keep") {
+      text += "\n".repeat(1 + trailingBlanks);
+    } else if (style.chomp === "clip" && body.length > 0) {
+      text += "\n";
+    }
+
+    // Advance past every token whose source line was consumed by the block.
+    let next = tokenIndex;
+    while (next < lines.length && (lines[next]?.number ?? Number.POSITIVE_INFINITY) <= rawIndex) {
+      next += 1;
+    }
+    return [text, next];
   }
 
   function parseMap(
@@ -176,9 +268,17 @@ function parseDocument(source: string): unknown {
       if (!key) {
         throw new ArmoniaError("ARM001", `Empty YAML key at line ${line.number}`);
       }
+      if (key === "<<") {
+        throw new ArmoniaError(
+          "ARM001",
+          `YAML merge keys (<<) are not supported in Armonìa manifests at line ${line.number}`
+        );
+      }
+      const keyLineNumber = line.number;
       index += 1;
-      if (rawValue === "|" || rawValue === ">") {
-        [output[key], index] = parseBlockScalar(index, indent, rawValue === ">");
+      const block = blockStyle(rawValue);
+      if (block) {
+        [output[key], index] = parseBlockScalar(index, keyLineNumber, indent, block);
       } else if (rawValue) {
         output[key] = scalar(rawValue);
       } else {
@@ -201,6 +301,7 @@ function parseDocument(source: string): unknown {
       if (!line || line.indent < indent) break;
       if (line.indent !== indent || !(line.content === "-" || line.content.startsWith("- "))) break;
       const rest = line.content.slice(1).trim();
+      const keyLineNumber = line.number;
       index += 1;
       if (!rest) {
         const next = lines[index];
@@ -221,8 +322,11 @@ function parseDocument(source: string): unknown {
       }
       const object: Record<string, unknown> = {};
       const [key, rawValue] = pair;
-      if (rawValue === "|" || rawValue === ">") {
-        [object[key], index] = parseBlockScalar(index, indent, rawValue === ">");
+      // Keys inside a sequence item are indented by the two characters of the "- " prefix.
+      const itemIndent = indent + 2;
+      const block = blockStyle(rawValue);
+      if (block) {
+        [object[key], index] = parseBlockScalar(index, keyLineNumber, itemIndent, block);
       } else if (rawValue) {
         object[key] = scalar(rawValue);
       } else {
@@ -258,6 +362,29 @@ function yamlScalar(value: unknown): string {
   return JSON.stringify(String(value));
 }
 
+/**
+ * Renders a multi-line string as a literal block scalar when doing so round-trips exactly.
+ * Returns undefined when the value must fall back to a quoted scalar.
+ */
+function blockScalarLines(key: string, value: string, prefix: string, indent: number): string[] | undefined {
+  if (!value.includes("\n")) return undefined;
+  const endsWithNewline = value.endsWith("\n");
+  const body = endsWithNewline ? value.slice(0, -1) : value;
+  const bodyLines = body.split("\n");
+  const first = bodyLines[0] ?? "";
+  // A leading blank or indented first line makes the block indentation ambiguous, and trailing
+  // whitespace is not preserved by block scalars.
+  if (first === "" || /^\s/.test(first)) return undefined;
+  if (bodyLines.some((line) => line !== "" && /\s$/.test(line))) return undefined;
+  if (bodyLines.some((line) => /^\s*$/.test(line) && line !== "")) return undefined;
+  if (body.endsWith("\n")) return undefined;
+  const inner = " ".repeat(indent + 2);
+  return [
+    `${prefix}${key}: ${endsWithNewline ? "|" : "|-"}`,
+    ...bodyLines.map((line) => (line === "" ? "" : `${inner}${line}`))
+  ];
+}
+
 function emit(value: unknown, indent: number): string[] {
   const prefix = " ".repeat(indent);
   if (Array.isArray(value)) {
@@ -278,6 +405,13 @@ function emit(value: unknown, indent: number): string[] {
     if (entries.length === 0) return [`${prefix}{}`];
     const lines: string[] = [];
     for (const [key, item] of entries) {
+      if (typeof item === "string") {
+        const block = blockScalarLines(key, item, prefix, indent);
+        if (block) {
+          lines.push(...block);
+          continue;
+        }
+      }
       if (item !== null && typeof item === "object") {
         if ((Array.isArray(item) && item.length === 0) || (!Array.isArray(item) && Object.keys(item).length === 0)) {
           lines.push(`${prefix}${key}: ${Array.isArray(item) ? "[]" : "{}"}`);

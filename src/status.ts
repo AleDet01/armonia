@@ -1,9 +1,4 @@
-import { resolve } from "node:path";
-import { loadProjectManifest, loadLockFile } from "./manifest.ts";
-import { resolvePacks } from "./resolver.ts";
-import { createPlan } from "./planner.ts";
-import { evaluatePolicies } from "./policy.ts";
-import type { Diagnostic } from "./types.ts";
+import { ProjectContext } from "./context.ts";
 
 export interface StatusSummary {
   project: {
@@ -30,13 +25,15 @@ export interface StatusSummary {
   healthy: boolean;
 }
 
-export async function projectStatus(projectRoot: string): Promise<StatusSummary> {
-  const root = resolve(projectRoot);
-  const manifest = await loadProjectManifest(root);
-  const lock = await loadLockFile(root);
-  const packs = await resolvePacks(root, manifest);
-  const plan = await createPlan(root);
-  const policyDiagnostics = await evaluatePolicies(root, manifest, packs);
+export async function projectStatus(
+  projectRoot: string,
+  context: ProjectContext = new ProjectContext(projectRoot)
+): Promise<StatusSummary> {
+  const manifest = await context.manifest();
+  const lock = await context.lock();
+  const packs = await context.packs();
+  const plan = await context.plan();
+  const policyDiagnostics = await context.policyDiagnostics();
 
   const managed = plan.entries.filter((e) => e.ownership === "managed").length;
   const scaffold = plan.entries.filter((e) => e.ownership === "scaffold").length;

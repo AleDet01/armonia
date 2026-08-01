@@ -1,6 +1,4 @@
-import { resolve } from "node:path";
-import { createPlan } from "./planner.ts";
-import { loadLockFile } from "./manifest.ts";
+import { ProjectContext } from "./context.ts";
 
 export interface DiffEntry {
   path: string;
@@ -24,10 +22,13 @@ export interface DiffResult {
   clean: boolean;
 }
 
-export async function diffProject(projectRoot: string): Promise<DiffResult> {
-  const root = resolve(projectRoot);
-  const plan = await createPlan(root);
-  const lock = await loadLockFile(root);
+export async function diffProject(
+  projectRoot: string,
+  context: ProjectContext = new ProjectContext(projectRoot)
+): Promise<DiffResult> {
+  const root = context.root;
+  const plan = await context.plan();
+  const lock = await context.lock();
 
   const actionable = plan.entries.filter(
     (e) => e.action === "create" || e.action === "update" || e.action === "conflict"
