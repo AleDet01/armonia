@@ -18,11 +18,7 @@ export default function Home() {
     <main>
       <nav className="nav shell" aria-label="Primary navigation">
         <a className="brand" href="#top" aria-label="Armonia home">
-          <span className="brand-mark" aria-hidden="true">
-            <i />
-            <i />
-            <i />
-          </span>
+          <img className="brand-logo" src="/armonia-mark.svg" alt="" aria-hidden="true" />
           <span>armonia</span>
         </a>
         <div className="nav-links">
@@ -115,7 +111,7 @@ export default function Home() {
             </div>
             <div className="terminal-line">
               <span aria-hidden="true">›</span>
-              <code>npx armonia-repo scan . --format sarif</code>
+                  <code>node bin/armonia.mjs scan . --format sarif</code>
               <span className="cursor" aria-hidden="true" />
             </div>
           </div>
@@ -260,9 +256,7 @@ export default function Home() {
 
       <footer className="footer shell">
         <a className="brand" href="#top">
-          <span className="brand-mark brand-mark-small" aria-hidden="true">
-            <i /><i /><i />
-          </span>
+          <img className="brand-logo brand-logo-small" src="/armonia-mark.svg" alt="" aria-hidden="true" />
           <span>armonia</span>
         </a>
         <p>Repository truth, reconciled in public.</p>

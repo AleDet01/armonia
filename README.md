@@ -1,4 +1,8 @@
 <p align="center">
+  <img src="public/armonia-mark.svg" alt="Armonia mark" width="72" height="72" />
+</p>
+
+<p align="center">
   <img src="public/og.png" alt="Armonia — Repository truth, reconciled" width="100%" />
 </p>
 

@@ -75,39 +75,12 @@ button {
   letter-spacing: -0.035em;
 }
 
-.brand-mark {
+.brand-logo {
   width: 30px;
   height: 30px;
-  position: relative;
-  display: inline-block;
-  border: 1.5px solid var(--ink);
-  border-radius: 50%;
+  display: block;
+  flex: 0 0 auto;
 }
-
-.brand-mark i {
-  position: absolute;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--ink);
-}
-
-.brand-mark i:nth-child(1) { left: 6px; top: 12px; }
-.brand-mark i:nth-child(2) { right: 6px; top: 7px; }
-.brand-mark i:nth-child(3) { right: 7px; bottom: 5px; background: var(--acid-deep); }
-
-.brand-mark::before,
-.brand-mark::after {
-  content: "";
-  position: absolute;
-  height: 1px;
-  background: var(--ink);
-  transform-origin: left center;
-  opacity: 0.56;
-}
-
-.brand-mark::before { width: 12px; left: 8px; top: 13px; transform: rotate(-24deg); }
-.brand-mark::after { width: 9px; right: 5px; top: 11px; transform: rotate(66deg); }
 
 .nav-links {
   display: flex;
@@ -1145,14 +1118,10 @@ button {
   letter-spacing: 0.06em;
 }
 
-.brand-mark-small {
+.brand-logo-small {
   width: 24px;
   height: 24px;
 }
-
-.brand-mark-small i:nth-child(1) { left: 4px; top: 9px; }
-.brand-mark-small i:nth-child(2) { right: 4px; top: 5px; }
-.brand-mark-small i:nth-child(3) { right: 5px; bottom: 3px; }
 
 @keyframes blink {
   50% { opacity: 0; }

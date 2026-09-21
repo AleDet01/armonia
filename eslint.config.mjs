@@ -35,6 +35,12 @@ const eslintConfig = defineConfig([
         version: "detect",
       },
     },
+    rules: {
+      // This is a Vinext application, not a Next.js deployment. The only image
+      // elements are tiny, local SVG marks; Next's image loader is unavailable
+      // here and would add an unnecessary runtime dependency.
+      "@next/next/no-img-element": "off",
+    },
   },
 ]);
 
