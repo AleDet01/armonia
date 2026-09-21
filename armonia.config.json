@@ -1,0 +1,13 @@
+{
+  "$schema": "./schema/armonia.schema.json",
+  "name": "Armonia",
+  "failOn": "error",
+  "maxFiles": 10000,
+  "maxFileBytes": 512000,
+  "exclude": [
+    "portfolio/snapshot.json"
+  ],
+  "rules": {
+    "disable": []
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://armonia.dev/schema/portfolio.schema.json",
+  "title": "Armonia portfolio registry",
+  "type": "object",
+  "required": ["repositories"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "repositories": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["slug", "name", "path", "domain", "description", "relation"],
+        "additionalProperties": false,
+        "properties": {
+          "slug": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+          "name": { "type": "string", "minLength": 1 },
+          "path": { "type": "string", "minLength": 1 },
+          "domain": { "type": "string", "minLength": 1 },
+          "description": { "type": "string", "minLength": 1 },
+          "stack": { "type": "array", "items": { "type": "string" }, "maxItems": 8 },
+          "relation": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

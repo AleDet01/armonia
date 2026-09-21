@@ -1,0 +1,14 @@
+{
+  "$schema": "../../schema/portfolio.schema.json",
+  "repositories": [
+    {
+      "slug": "armonia-reference",
+      "name": "Armonia reference project",
+      "path": "../..",
+      "domain": "Developer infrastructure",
+      "description": "A self-contained reference scan for the Armonia engine.",
+      "stack": ["Node.js", "React", "SARIF"],
+      "relation": "Demonstrates a portable registry without disclosing unrelated repositories."
+    }
+  ]
+}
