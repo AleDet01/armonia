@@ -11,6 +11,7 @@
   },
   "files": [
     "src",
+    "ui",
     "spec",
     "packs",
     "policies",
@@ -26,7 +27,8 @@
     "test": "node --experimental-strip-types --test test/core.test.ts test/cli.test.ts test/security.test.ts test/yaml.test.ts",
     "verify": "pnpm run check && pnpm run typecheck && pnpm run test && node --experimental-strip-types src/cli.ts validate .",
     "armonia": "node --experimental-strip-types src/cli.ts",
-    "prepack": "pnpm run verify"
+    "prepack": "pnpm run verify",
+    "ui": "node --experimental-strip-types src/cli.ts ui"
   },
   "engines": {
     "node": ">=24"

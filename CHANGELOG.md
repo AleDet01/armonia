@@ -7,6 +7,10 @@ specification and CLI surfaces.
 
 ### Added
 
+- Local visual dashboard via `armonia ui`, with health, plan, diagnostics, packs, components,
+  and guarded safe-apply actions.
+- One-click platform launchers for starting the downloaded repository in the browser.
+
 - `armonia/v1` project, pack, policy, and lock contracts.
 - Reference CLI with safe planning, application, validation, capability execution, and migration.
 - Declarative built-in pack catalog.
