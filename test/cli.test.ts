@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { test } from "node:test";
 import { mkdtemp } from "node:fs/promises";
 import { runCli } from "../src/cli.ts";
+import { startUiServer } from "../src/ui.ts";
 
 test("CLI returns stable usage and success exit classes", async () => {
   assert.equal(await runCli(["version"]), 0);
@@ -39,6 +40,42 @@ test("CLI initializes, validates, plans, and dry-runs a capability", async () =>
       0
     );
   } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+
+test("local UI serves a project overview without opening a browser", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "armonia-ui-"));
+  let handle;
+  try {
+    assert.equal(
+      await runCli([
+        "init",
+        directory,
+        "--name",
+        "UI test",
+        "--id",
+        "test/ui",
+        "--owner",
+        "tester",
+        "--language",
+        "typescript",
+        "--profile",
+        "baseline",
+        "--json"
+      ]),
+      0
+    );
+    handle = await startUiServer(directory, { openBrowser: false, quiet: true });
+    const response = await fetch(handle.url + "api/overview");
+    assert.equal(response.status, 200);
+    const overview = await response.json();
+    assert.equal(overview.project.name, "UI test");
+    assert.equal(typeof overview.csrfToken, "string");
+    assert.ok(Array.isArray(overview.plan.entries));
+  } finally {
+    await handle?.close();
     await rm(directory, { recursive: true, force: true });
   }
 });
