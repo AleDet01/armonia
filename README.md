@@ -69,6 +69,29 @@ armonia run test
 armonia run build
 ```
 
+## Visual dashboard
+
+Armonìa includes a dependency-free local dashboard built on the same engine as the CLI:
+
+```sh
+armonia ui
+```
+
+It opens a browser on a loopback-only server and explains project health, pending changes,
+conflicts, diagnostics, packs, and components. Safe generated-file changes can be reviewed and
+applied from the dashboard; conflicting managed files remain blocked.
+
+### One-click local launch
+
+After downloading or cloning the repository, use the platform launcher in the project root:
+
+- Windows: double-click `Start Armonia.cmd`.
+- macOS: double-click `Start Armonia.command`.
+- Linux: run or double-click `start-armonia.sh` from a file manager that allows executable scripts.
+
+The launcher checks for Node.js 24+, starts the local dashboard, and opens the browser.
+No application framework or runtime dependency is installed.
+
 ## Repository contract
 
 Every governed repository owns:
