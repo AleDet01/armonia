@@ -16,6 +16,7 @@ import { runCapability, runPipeline, DEFAULT_PIPELINE } from "./run.ts";
 import { projectStatus, formatStatus } from "./status.ts";
 import { formatUpgrade, upgradeProject } from "./upgrade.ts";
 import { validateProject } from "./validate.ts";
+import { startUiServer } from "./ui.ts";
 import { ArmoniaError } from "./errors.ts";
 import type { Diagnostic, Plan, ProjectManifest } from "./types.ts";
 
@@ -25,7 +26,7 @@ const VERSION = CLI_VERSION;
 const USAGE_CODES = new Set(["ARM070", "ARM071", "ARM072", "ARM073", "ARM074", "ARM075"]);
 
 /** Flags that never take a value, so they cannot swallow a following positional argument. */
-const BOOLEAN_FLAGS = new Set(["json", "dry-run", "force", "apply", "no-apply", "help"]);
+const BOOLEAN_FLAGS = new Set(["json", "dry-run", "force", "apply", "no-apply", "no-open", "help"]);
 
 const MANIFEST_FLAGS = [
   "name",
@@ -58,6 +59,7 @@ const COMMAND_FLAGS: Record<string, string[]> = {
   upgrade: ["apply", "force"],
   migrate: ["apply"],
   explain: [],
+  ui: ["port", "no-open"],
   run: ["component", "dry-run", "timeout"],
   ci: ["dry-run", "capability", "timeout"]
 };
@@ -332,6 +334,7 @@ Read-only commands:
   validate [path]      Validate schema, packs, policies, and conflicts
   doctor [path]        Validate plus toolchain and generated-drift checks
   explain <rule|file>  Explain a policy rule, or trace a file to its pack
+  ui [path]            Open the local visual dashboard
   version              Print the CLI version
 
 Mutating commands:
@@ -348,6 +351,10 @@ Execution:
 Common options:
   --root <path>        Explicit project root
   --json               Machine-readable output
+
+ui options:
+  --port <number>       Use a specific local port (default: automatic)
+  --no-open             Start without opening the browser
 
 init / adopt options:
   --name <name> --id <id> --owner <owner> --description <text>
@@ -580,6 +587,15 @@ export async function runCli(argv = process.argv.slice(2)): Promise<number> {
           print({ results }, json);
         }
         return results.find((result) => result.exitCode !== 0)?.exitCode ?? 0;
+      }
+
+      case "ui": {
+        const port = optionInteger(args, "port");
+        await startUiServer(projectRoot(args), {
+          ...(port !== undefined ? { port } : {}),
+          openBrowser: !optionBoolean(args, "no-open")
+        });
+        return 0;
       }
 
       case "explain": {
