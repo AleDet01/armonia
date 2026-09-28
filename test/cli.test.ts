@@ -47,7 +47,7 @@ test("CLI initializes, validates, plans, and dry-runs a capability", async () =>
 
 test("local UI serves a project overview without opening a browser", async () => {
   const directory = await mkdtemp(join(tmpdir(), "armonia-ui-"));
-  let handle;
+  let handle: { url: string; close(): Promise<void> } | undefined;
   try {
     assert.equal(
       await runCli([
