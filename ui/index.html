@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Armonìa</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Repository control plane</p>
+        <h1>Armonìa</h1>
+        <p class="lead">Capisci lo stato del repository, cosa cambierebbe e cosa richiede attenzione.</p>
+      </div>
+      <div id="healthBadge" class="badge">Caricamento…</div>
+    </header>
+
+    <section id="summary" class="grid summary" aria-live="polite"></section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <p class="eyebrow">Progetto</p>
+          <h2 id="projectName">—</h2>
+        </div>
+        <button id="refreshButton" class="secondary">Aggiorna</button>
+      </div>
+      <p id="projectDescription" class="muted"></p>
+      <div id="projectMeta" class="meta"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <p class="eyebrow">Piano</p>
+          <h2>Cosa farebbe Armonìa</h2>
+        </div>
+        <button id="applyButton" class="primary" disabled>Applica modifiche sicure</button>
+      </div>
+      <p class="muted">Nessuna modifica viene applicata finché non premi il pulsante. I conflitti restano bloccati.</p>
+      <div id="planSummary" class="chips"></div>
+      <div id="planEntries" class="list"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <p class="eyebrow">Diagnostica</p>
+          <h2>Problemi e suggerimenti</h2>
+        </div>
+      </div>
+      <div id="diagnostics" class="list"></div>
+    </section>
+
+    <section class="panel two-col">
+      <div>
+        <p class="eyebrow">Pack</p>
+        <h2>Funzionalità attive</h2>
+        <div id="packs" class="list compact"></div>
+      </div>
+      <div>
+        <p class="eyebrow">Componenti</p>
+        <h2>Parti del progetto</h2>
+        <div id="components" class="list compact"></div>
+      </div>
+    </section>
+
+    <footer>
+      <span id="footerVersion"></span>
+      <span id="projectRoot"></span>
+    </footer>
+  </main>
+
+  <dialog id="confirmDialog">
+    <form method="dialog">
+      <h3>Applicare le modifiche?</h3>
+      <p>Armonìa applicherà solo le modifiche senza conflitti. I file divergenti non vengono sovrascritti.</p>
+      <div class="dialog-actions">
+        <button value="cancel" class="secondary">Annulla</button>
+        <button value="confirm" class="primary">Applica</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="/app.js"></script>
+</body>
+</html>
