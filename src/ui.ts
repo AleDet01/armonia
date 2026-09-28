@@ -8,6 +8,7 @@ import { applyPlan, CLI_VERSION } from "./apply.ts";
 import { ProjectContext } from "./context.ts";
 import { doctorProject } from "./doctor.ts";
 import { projectStatus } from "./status.ts";
+import { effectiveCapabilities } from "./resolver.ts";
 
 export interface UiServerOptions {
   port?: number;
@@ -72,6 +73,12 @@ async function buildOverview(projectRoot: string, csrfToken: string): Promise<un
     doctorProject(projectRoot)
   ]);
 
+  const needsAttention =
+    !status.healthy ||
+    !doctor.healthy ||
+    status.files.pending > 0 ||
+    doctor.diagnostics.some((item) => item.severity === "warning" || item.severity === "error");
+
   return {
     version: CLI_VERSION,
     root: context.root,
@@ -85,8 +92,8 @@ async function buildOverview(projectRoot: string, csrfToken: string): Promise<un
       visibility: manifest.spec.visibility ?? null
     },
     health: {
-      healthy: status.healthy && doctor.healthy,
-      state: status.healthy && doctor.healthy ? "healthy" : "attention"
+      healthy: !needsAttention,
+      state: needsAttention ? "attention" : "healthy"
     },
     status,
     plan: {
@@ -104,7 +111,7 @@ async function buildOverview(projectRoot: string, csrfToken: string): Promise<un
       id: component.id,
       path: component.path,
       languages: component.languages ?? [],
-      capabilities: Object.keys(component.capabilities ?? {})
+      capabilities: Object.keys(effectiveCapabilities(manifest, packs, component.id))
     }))
   };
 }
