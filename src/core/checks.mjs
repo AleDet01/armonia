@@ -1,32 +1,16 @@
 import { createHash } from "node:crypto";
 import path from "node:path";
+import { compareText, nodeMajorsConflict, safeText, STANDARD_ENV } from "./text.mjs";
+import { closestPackage } from "./files.mjs";
 
 const SEVERITY_ORDER = { critical: 0, error: 1, warning: 2, info: 3 };
 const PENALTY = { critical: 24, error: 10, warning: 3, info: 0 };
-const STANDARD_ENV = new Set([
-  "CI",
-  "HOME",
-  "PATH",
-  "PWD",
-  "SHELL",
-  "TERM",
-  "TMP",
-  "TEMP",
-  "USER",
-  "USERNAME",
-  "NODE_ENV",
-  "CODEX_SANDBOX",
-  // GitHub injects these into Actions runners; they are platform metadata,
-  // not configuration a contributor must add to a local .env.example.
-  "GITHUB_ACTIONS",
-  "GITHUB_REPOSITORY",
-]);
 
 function stableFingerprint(ruleId, message, evidence) {
   const identity = [
     ruleId,
     message,
-    ...evidence.map((item) => `${item.source}:${item.line}:${item.value}`),
+    ...evidence.map((item) => `${item.source}:${item.line}:${item.value}`).sort(),
   ].join("\n");
   return createHash("sha256").update(identity).digest("hex").slice(0, 16);
 }
@@ -41,6 +25,10 @@ function makeFinding({
   suggestion,
   contradiction = false,
 }) {
+  message = safeText(message);
+  why = safeText(why);
+  suggestion = suggestion === undefined ? undefined : safeText(suggestion);
+  evidence = evidence.map((item) => ({ ...item, source: safeText(item.source), label: safeText(item.label), value: safeText(item.value) }));
   return {
     ruleId,
     category,
@@ -104,19 +92,31 @@ export function runChecks(facts, config = {}) {
     });
   }
 
+  if (facts.skipped?.length) {
+    add({
+      ruleId: "scan/incomplete",
+      category: "trust",
+      severity: "warning",
+      message: `${facts.skipped.length} paths could not be fully inspected`,
+      why: "Unreadable, binary or oversized text candidates are not evidence of a clean repository.",
+      evidence: facts.skipped.slice(0, 8).map((item) => fileEvidence(item.source, item.reason)),
+      suggestion: "Review skipped paths and size limits; rescan a stable, readable checkout.",
+    });
+  }
+
   for (const invalid of facts.invalidJson) {
     add({
       ruleId: "manifest/invalid-json",
       category: "delivery",
       severity: "error",
-      message: `${invalid.source} is not valid JSON`,
+      message: `${invalid.source} is not a valid package manifest`,
       why: "Package tooling cannot interpret a malformed manifest reliably.",
       evidence: [invalid],
-      suggestion: "Repair the JSON syntax before relying on other manifest checks.",
+      suggestion: "Repair JSON syntax and field types before relying on other manifest checks.",
     });
   }
 
-  if (facts.readmes.length === 0) {
+  if (!hasAnyFile(facts, [/(^|\/)readme(?:\.[^/]+)?$/i])) {
     add({
       ruleId: "public/readme",
       category: "docs",
@@ -229,7 +229,7 @@ export function runChecks(facts, config = {}) {
     const packageFact = reference.package;
     if (!packageFact) continue;
     const scripts = packageFact.data.scripts ?? {};
-    if (!(reference.script in scripts)) {
+    if (!Object.hasOwn(scripts, reference.script)) {
       add({
         ruleId: "command/missing-script",
         category: reference.kind === "workflow" ? "delivery" : "docs",
@@ -266,7 +266,7 @@ export function runChecks(facts, config = {}) {
       const value = packageFact.data[field];
       if (typeof value !== "string" || /[*?]/.test(value)) continue;
       const target = path.posix.normalize(path.posix.join(packageDirectory(packageFact.path), value));
-      if (!facts.fileSet.has(target.toLowerCase())) {
+      if (!facts.fileSet.has(target)) {
         add({
           ruleId: "manifest/missing-entrypoint",
           category: "delivery",
@@ -298,18 +298,27 @@ export function runChecks(facts, config = {}) {
   }
 
   const nodeFacts = facts.runtimes.filter((item) => item.runtime === "node" && item.major !== null);
-  const nodeMajors = new Set(nodeFacts.map((item) => item.major));
-  if (nodeMajors.size > 1) {
-    add({
-      ruleId: "runtime/node-drift",
-      category: "runtime",
-      severity: "error",
-      message: `Node runtime declarations disagree: ${[...nodeMajors].sort((a, b) => a - b).join(", ")}`,
-      why: "Local development, CI and production can execute materially different JavaScript behavior.",
-      evidence: nodeFacts.slice(0, 8).map((item) => item.evidence),
-      suggestion: "Choose one supported major or declare an intentional compatibility matrix in Armonia config.",
-      contradiction: true,
-    });
+  const runtimeGroups = new Map();
+  for (const runtime of nodeFacts) {
+    const scope = closestPackage(facts.packages, runtime.evidence.source)?.path ?? ".";
+    const group = runtimeGroups.get(scope) ?? [];
+    group.push(runtime);
+    runtimeGroups.set(scope, group);
+  }
+  for (const group of runtimeGroups.values()) {
+    const nodeMajors = new Set(group.map((item) => item.major));
+    if (nodeMajorsConflict(group.map((item) => item.raw))) {
+      add({
+        ruleId: "runtime/node-drift",
+        category: "runtime",
+        severity: "error",
+        message: `Node runtime declarations disagree: ${[...nodeMajors].sort((a, b) => a - b).join(", ")}`,
+        why: "Local development, CI and production can execute materially different JavaScript behavior.",
+        evidence: group.map((item) => item.evidence).sort((a, b) => compareText(a.source, b.source) || a.line - b.line || compareText(String(a.value), String(b.value))).slice(0, 8),
+        suggestion: "Align incompatible runtime requirements; this check compares simple major-level declarations, not full semver ranges.",
+        contradiction: true,
+      });
+    }
   }
 
   const documentedPorts = [...new Set(facts.ports.filter((item) => item.kind === "documentation").map((item) => item.port))];
@@ -360,15 +369,15 @@ export function runChecks(facts, config = {}) {
       message: `Environment example declares ${name}, but no source usage was found`,
       why: "Stale setup instructions create unnecessary configuration work and uncertainty.",
       evidence: [declaration.evidence],
-      suggestion: "Remove the entry or declare its non-source consumer in Armonia config.",
+      suggestion: "Check for non-source consumers before removing a stale entry.",
     });
   }
 
   for (const link of facts.links) {
     const target = relativeTarget(link.evidence.source, link.target);
     if (!target || target.startsWith("..")) continue;
-    const normalized = target.toLowerCase().replace(/\/$/, "");
-    const exists = facts.fileSet.has(normalized) || facts.files.some((file) => file.toLowerCase().startsWith(`${normalized}/`));
+    const normalized = target.replace(/\/$/, "");
+    const exists = normalized === "." || facts.fileSet.has(normalized) || facts.directories?.includes(normalized);
     if (!exists) {
       add({
         ruleId: "docs/broken-relative-link",
@@ -485,7 +494,7 @@ export function runChecks(facts, config = {}) {
 
   findings.sort((a, b) => {
     const severity = SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity];
-    return severity || a.ruleId.localeCompare(b.ruleId) || a.fingerprint.localeCompare(b.fingerprint);
+    return severity || compareText(a.ruleId, b.ruleId) || compareText(a.fingerprint, b.fingerprint);
   });
   return findings;
 }

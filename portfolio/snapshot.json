@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-21T20:09:34.451Z",
+  "generatedAt": "2026-10-01T13:56:43.793Z",
   "repositories": [
     {
       "slug": "armonia-reference",
@@ -16,7 +16,7 @@
       "available": true,
       "score": 100,
       "grade": "A+",
-      "claims": 100,
+      "claims": 95,
       "contradictions": 0,
       "findings": 0
     }

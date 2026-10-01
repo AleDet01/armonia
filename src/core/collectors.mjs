@@ -1,5 +1,6 @@
 import path from "node:path";
-import { closestPackage, lineNumber, normalizePath, readTextMap, walkFiles } from "./files.mjs";
+import { closestPackage, lineNumber, normalizePath, readTextFiles, walkFiles } from "./files.mjs";
+import { compareText, secretPatterns, validManifest } from "./text.mjs";
 
 const WORKFLOW_PATTERN = /^\.github\/workflows\/[^/]+\.ya?ml$/i;
 const README_PATTERN = /(^|\/)readme(?:\.[^/]+)?$/i;
@@ -76,7 +77,7 @@ function collectCommand(command, source, line, kind, facts) {
   ];
   for (const pattern of patterns) {
     for (const match of command.matchAll(pattern)) {
-      if (["install", "add", "exec", "dlx", "init", "create"].includes(match[1])) continue;
+      if (["install", "add", "exec", "dlx", "init", "create", "audit", "update", "remove", "publish", "pack", "list", "outdated", "why", "config"].includes(match[1])) continue;
       facts.scriptReferences.push({ script: match[1], kind, evidence: evidence(source, line, kind, match[0]) });
     }
   }
@@ -90,9 +91,17 @@ function collectCommand(command, source, line, kind, facts) {
 
 function collectWorkflow(text, source, facts) {
   const lines = text.split("\n");
+  let runIndent = null;
   lines.forEach((line, index) => {
     const run = line.match(/^\s*(?:-\s*)?run:\s*[>|-]?\s*(.*)$/);
     if (run?.[1]) collectCommand(run[1].trim(), source, index + 1, "workflow", facts);
+    if (run) runIndent = /run:\s*[>|][+-]?\s*(?:#.*)?$/.test(line)
+      ? /^[ \t]*/.exec(line)[0].length + (line.trimStart().startsWith("-") ? 2 : 0)
+      : null;
+    else if (runIndent !== null && line.trim()) {
+      if (/^[ \t]*/.exec(line)[0].length > runIndent) collectCommand(line.trim(), source, index + 1, "workflow", facts);
+      else runIndent = null;
+    }
 
     const uses = line.match(/^\s*(?:-\s*)?uses:\s*["']?([^\s"']+)/);
     if (uses) {
@@ -111,7 +120,7 @@ function collectWorkflow(text, source, facts) {
     }
   });
 
-  if (!/^permissions:\s*$/m.test(text) && !/^\s+permissions:\s*$/m.test(text)) {
+  if (!/^\s*permissions\s*:/m.test(text)) {
     facts.workflowsWithoutPermissions.push(evidence(source, 1, "workflow", "permissions not declared"));
   }
 }
@@ -135,8 +144,24 @@ function collectDocker(text, source, facts) {
     const match = text.match(/^\s*FROM\s+[^\s:]+:latest\b/im);
     facts.floatingImages.push(evidence(source, lineNumber(text, match?.index ?? 0), "container", match?.[0]?.trim() ?? "latest"));
   }
-  if (!/^\s*USER\s+\S+/im.test(text)) {
-    facts.rootContainers.push(evidence(source, 1, "container", "no USER instruction"));
+  let user = null;
+  let currentStage = null;
+  const stageUsers = new Map();
+  for (const line of text.split("\n")) {
+    const from = line.match(/^\s*FROM\s+(?:--platform=\S+\s+)?(\S+)(?:\s+AS\s+(\S+))?/i);
+    if (from) {
+      user = stageUsers.get(from[1].toLowerCase()) ?? null;
+      currentStage = from[2]?.toLowerCase() ?? null;
+      if (currentStage) stageUsers.set(currentStage, user);
+    }
+    const declared = line.match(/^\s*USER\s+(\S+)/i);
+    if (declared) {
+      user = declared[1];
+      if (currentStage) stageUsers.set(currentStage, user);
+    }
+  }
+  if (!user || /^(?:root|0+)(?::|$)/i.test(user) || user.includes("$")) {
+    facts.rootContainers.push(evidence(source, 1, "container", user ? `USER ${user}` : "no final-stage USER instruction"));
   }
 }
 
@@ -164,14 +189,10 @@ function collectSource(text, source, facts) {
       facts.envUses.push({ name, evidence: evidence(source, lineNumber(text, match.index), "source", name) });
     }
   }
+}
 
-  const secretPatterns = [
-    /\bAKIA[0-9A-Z]{16}\b/g,
-    /\bgh[pousr]_[A-Za-z0-9_]{24,}\b/g,
-    /\bsk-(?:proj-)?[A-Za-z0-9_-]{20,}\b/g,
-    /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/g,
-  ];
-  for (const regex of secretPatterns) {
+function collectSecrets(text, source, facts) {
+  for (const regex of secretPatterns()) {
     for (const match of text.matchAll(regex)) {
       facts.possibleSecrets.push(evidence(source, lineNumber(text, match.index), "source", `[redacted:${match[0].slice(0, 3)}…]`));
     }
@@ -184,8 +205,8 @@ export async function collectFacts(root, config = {}) {
     exclude: config.exclude ?? [],
     maxFiles: config.maxFiles ?? 10_000,
   });
-  const texts = await readTextMap(absoluteRoot, walk.files, config.maxFileBytes ?? 512_000);
-  const fileSet = new Set(walk.files.map((file) => file.toLowerCase()));
+  const { texts, skipped } = await readTextFiles(absoluteRoot, walk.files, config.maxFileBytes ?? 512_000);
+  const fileSet = new Set(walk.files);
   const facts = {
     root: absoluteRoot,
     name: path.basename(absoluteRoot),
@@ -193,6 +214,8 @@ export async function collectFacts(root, config = {}) {
     fileSet,
     texts,
     truncated: walk.truncated,
+    skipped: [...walk.skipped, ...skipped],
+    directories: walk.directories,
     packages: [],
     readmes: [],
     workflows: [],
@@ -216,7 +239,7 @@ export async function collectFacts(root, config = {}) {
     const base = path.posix.basename(source).toLowerCase();
     if (base === "package.json") {
       const data = parseJson(text);
-      if (data) {
+      if (validManifest(data)) {
         const packageFact = { path: source, data, text };
         facts.packages.push(packageFact);
         if (data.engines?.node) {
@@ -229,7 +252,7 @@ export async function collectFacts(root, config = {}) {
           });
         }
       } else {
-        facts.invalidJson.push(evidence(source, 1, "manifest", "invalid JSON"));
+        facts.invalidJson.push(evidence(source, 1, "manifest", "invalid JSON or manifest field types"));
       }
     }
     if (README_PATTERN.test(source)) {
@@ -246,9 +269,10 @@ export async function collectFacts(root, config = {}) {
     }
     if (ENV_EXAMPLE_PATTERN.test(source)) collectEnv(text, source, "env-example", facts);
     if (SOURCE_EXTENSIONS.test(source)) collectSource(text, source, facts);
+    collectSecrets(text, source, facts);
   }
 
-  facts.packages.sort((a, b) => a.path.localeCompare(b.path));
+  facts.packages.sort((a, b) => compareText(a.path, b.path));
   for (const reference of facts.scriptReferences) {
     reference.package = closestPackage(facts.packages, reference.evidence.source);
   }

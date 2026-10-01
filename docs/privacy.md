@@ -20,6 +20,14 @@ notice for a hosted service.
 - It does not send telemetry.
 - It does not include a detected high-confidence credential value in a finding.
 
+Credential patterns are applied across supported text files and recognized
+values are redacted from messages, evidence and filenames. This does not detect
+every kind of secret: arbitrary passwords, unknown token formats and secrets in
+unsupported, excluded or unreadable files may be missed. Coverage warnings and
+the report's `repository.skipped` list explain unread text candidates. Symbolic
+links are excluded, but the scanner is not a sandbox for an actively changing,
+hostile filesystem; scan a stable copy of the repository.
+
 ## What may appear in a report
 
 Findings can include relative filenames, line numbers, package metadata,

@@ -18,13 +18,26 @@ portfolio does not change what the scanner believes.
 
 Repository content is untrusted and is never executed. JSON parsing is limited
 to known configuration and manifest surfaces. Text files are bounded by
-`maxFileBytes`; traversal is bounded by `maxFiles`. Symbolic links and common
-dependency/build directories are skipped.
+`maxFileBytes`; traversal is bounded by `maxFiles`. Eight concurrent readers
+retain at most 64 MiB of text. Results retain traversal order, not I/O completion
+order. Ordinal sorting avoids machine-locale differences. Unreadable, oversized
+and binary candidates are reported as incomplete
+coverage. Invalid scan roots and invalid configuration are invocation errors.
+Symbolic links and common dependency/build directories are skipped. File
+identity and the resolved repository boundary are checked before retaining
+content; this is not an OS sandbox against a malicious concurrent filesystem
+writer. Scan a stable checkout.
 
 The current collectors use intentionally conservative patterns. A missing fact
 should reduce coverage, not produce a confident contradiction. Rules that need
 language-aware parsing can add an optional adapter later, but deterministic
 behavior and evidence locations remain part of the contract.
+
+The static website has no backend or persistence. Its browser scanner is an
+explicit subset of the CLI, shares validation/redaction primitives, and never
+makes a network request with selected contents. Browser and CLI scores are
+different heuristics; neither is a security certification. The Pages build
+normalizes Vinext's prefixed disk layout and validates exported asset paths.
 
 ## Stable identities
 

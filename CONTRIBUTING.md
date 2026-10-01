@@ -24,7 +24,15 @@ npm run check
 
 Keep production runtime dependencies out of `src/core` unless a proposal proves
 that Node built-ins cannot implement the behavior safely. Generated portfolio
-metrics must come from `npm run portfolio`; do not hand-edit scores.
+metrics must come from `npm run portfolio:example` or the CLI `portfolio`
+command with an explicit registry; do not hand-edit scores.
+
+`npm run check` runs lint, TypeScript, engine/browser/CLI regression tests, the
+static build, asset-path checks and a self-scan. For project-Pages verification
+set `GITHUB_ACTIONS=true` and `GITHUB_REPOSITORY=owner/Armonia` before running it;
+unset them afterward. The build verifies physical asset locations as well as
+the generated URLs. `npm audit --audit-level=moderate` is a separate networked
+dependency check used by both CI and deployment.
 
 ## Pull requests
 

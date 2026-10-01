@@ -1,16 +1,17 @@
 #!/usr/bin/env node
 
-import { access, mkdir, readFile, stat, writeFile } from "node:fs/promises";
+import { access, mkdir, mkdtemp, readFile, rename, rmdir, stat, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { formatTerminal, scanRepository, toSarif } from "../src/core/report.mjs";
+import { formatTerminal, readConfig, scanRepository, TOOL_VERSION, toSarif } from "../src/core/report.mjs";
+import { validateRegistry } from "../src/core/config.mjs";
+import { safeText } from "../src/core/text.mjs";
 
-const VERSION = "0.1.0";
 const SEVERITY = { critical: 0, error: 1, warning: 2, info: 3, never: 99 };
 
 function help() {
   return `
-Armonia ${VERSION} — reconcile repository truth
+Armonia ${TOOL_VERSION} — reconcile repository truth
 
 Usage:
   armonia scan [path] [--format terminal|json|sarif] [--output file]
@@ -20,44 +21,65 @@ Usage:
 
 Scan options:
   --config <file>       Use an explicit configuration file
-  --fail-on <severity>  critical, error, warning, info, or never (default: error)
+  --fail-on <severity>  Override config: critical, error, warning, info, never
   --format <format>     terminal, json, or sarif (default: terminal)
   --output <file>       Write output atomically instead of stdout
   --no-color            Disable ANSI colors
 
-Armonia performs no network requests and never includes detected secret values
-in a report. Exit code 1 means the selected severity threshold was reached.
+Armonia performs no network requests and redacts recognized credential shapes.
+Default threshold: config failOn, otherwise error. Exit code 1 means the
+threshold was reached; exit code 2 means invocation or scan failure.
 `.trim();
 }
 
-function parseArguments(argv) {
+function parseArguments(argv, command) {
   const options = { _: [] };
+  const allowed = { scan: ["config", "fail-on", "format", "output"], portfolio: ["registry", "output"], init: [], rules: [] }[command];
+  if (!allowed) throw new Error("Unknown command. Run armonia --help.");
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index];
+    if (token === "--") { options._.push(...argv.slice(index + 1)); break; }
     if (!token.startsWith("--")) {
       options._.push(token);
       continue;
     }
     if (token === "--no-color") {
+      if (command !== "scan") throw new Error("--no-color is only supported by scan");
       options.color = false;
       continue;
     }
-    const [name, inline] = token.slice(2).split("=", 2);
+    const separator = token.indexOf("=");
+    const name = token.slice(2, separator < 0 ? undefined : separator);
+    const inline = separator < 0 ? undefined : token.slice(separator + 1);
+    if (!allowed.includes(name)) throw new Error("Unsupported option. Run armonia --help.");
     const value = inline ?? argv[index + 1];
     if (inline === undefined) index += 1;
     if (!value || value.startsWith("--")) throw new Error(`Missing value for --${name}`);
     options[name.replaceAll("-", "_")] = value;
   }
+  if (options._.length > (["scan", "init"].includes(command) ? 1 : 0)) throw new Error("Too many positional arguments");
+  if (options.format && !["terminal", "json", "sarif"].includes(options.format)) throw new Error("Unsupported format. Use terminal, json, or sarif.");
+  if (options.fail_on && !Object.hasOwn(SEVERITY, options.fail_on)) throw new Error("Unsupported severity threshold");
   return options;
 }
 
 async function writeOutput(target, content) {
   const absolute = path.resolve(target);
   await mkdir(path.dirname(absolute), { recursive: true });
-  const temporary = `${absolute}.${process.pid}.tmp`;
-  await writeFile(temporary, content, "utf8");
-  const { rename } = await import("node:fs/promises");
-  await rename(temporary, absolute);
+  const temporaryDirectory = await mkdtemp(path.join(path.dirname(absolute), ".armonia-output-"));
+  const temporary = path.join(temporaryDirectory, "report");
+  async function cleanup() {
+    try { await unlink(temporary); } catch (error) { if (error.code !== "ENOENT") throw error; }
+    await rmdir(temporaryDirectory);
+  }
+  try {
+    await writeFile(temporary, content, { encoding: "utf8", flag: "wx", mode: 0o600 });
+    await rename(temporary, absolute);
+  } catch (error) {
+    await cleanup();
+    throw error;
+  }
+  await cleanup();
 }
 
 function serialize(report, format, color) {
@@ -77,8 +99,9 @@ function thresholdReached(report, threshold) {
 async function scanCommand(options) {
   const root = path.resolve(options._[0] ?? ".");
   const format = options.format ?? "terminal";
-  const threshold = options.fail_on ?? "error";
-  const report = await scanRepository(root, { configPath: options.config });
+  const config = await readConfig(root, options.config);
+  const threshold = options.fail_on ?? config.failOn ?? "error";
+  const report = await scanRepository(root, { config });
   const content = serialize(report, format, options.color);
   if (options.output) await writeOutput(options.output, content);
   else process.stdout.write(content);
@@ -88,10 +111,11 @@ async function scanCommand(options) {
 async function portfolioCommand(options) {
   const registryPath = path.resolve(options.registry ?? "portfolio/registry.json");
   const registryRoot = path.dirname(registryPath);
-  const registry = JSON.parse(await readFile(registryPath, "utf8"));
-  if (!Array.isArray(registry.repositories)) {
-    throw new Error("Portfolio registry must contain a repositories array.");
-  }
+  let registry;
+  const text = await readFile(registryPath, "utf8");
+  try { registry = JSON.parse(text); }
+  catch { throw new Error("Portfolio registry is not valid JSON"); }
+  validateRegistry(registry);
 
   const repositories = [];
   for (const entry of registry.repositories) {
@@ -135,7 +159,7 @@ async function portfolioCommand(options) {
         claims: 0,
         contradictions: 0,
         findings: 0,
-        error: error.message,
+        error: `Scan failed (${error.code ?? "invalid configuration or repository"})`,
       });
     }
   }
@@ -153,12 +177,12 @@ async function portfolioCommand(options) {
 
 function portfolioMetadata(entry) {
   return {
-    slug: entry.slug,
-    name: entry.name,
-    description: entry.description,
-    domain: entry.domain,
-    stack: entry.stack ?? [],
-    relation: entry.relation,
+    slug: safeText(entry.slug),
+    name: safeText(entry.name),
+    description: safeText(entry.description),
+    domain: safeText(entry.domain),
+    stack: (entry.stack ?? []).map(safeText),
+    relation: safeText(entry.relation),
   };
 }
 
@@ -174,7 +198,7 @@ async function initCommand(options) {
   }
 
   const config = {
-    $schema: "./schema/armonia.schema.json",
+    $schema: "https://raw.githubusercontent.com/AleDet01/Armonia/main/schema/armonia.schema.json",
     failOn: "error",
     exclude: ["fixtures/**", "generated/**"],
     rules: { disable: [] },
@@ -186,7 +210,7 @@ async function initCommand(options) {
 
 function rulesCommand() {
   const groups = {
-    trust: ["scan/file-limit"],
+    trust: ["scan/file-limit", "scan/incomplete"],
     docs: ["public/readme", "command/missing-script", "docs/broken-relative-link", "environment/stale-example"],
     delivery: ["manifest/invalid-json", "package-manager/multiple-lockfiles", "package-manager/undeclared", "command/posix-env-assignment", "manifest/missing-entrypoint", "dependency/floating-version", "delivery/no-ci", "delivery/no-test-script"],
     runtime: ["runtime/node-drift", "runtime/port-drift", "environment/undocumented"],
@@ -206,11 +230,11 @@ export async function main(argv = process.argv.slice(2)) {
     return 0;
   }
   if (["--version", "-v", "version"].includes(command)) {
-    process.stdout.write(`${VERSION}\n`);
+    process.stdout.write(`${TOOL_VERSION}\n`);
     return 0;
   }
 
-  const options = parseArguments(rest);
+  const options = parseArguments(rest, command);
   if (command === "scan") return scanCommand(options);
   if (command === "portfolio") return portfolioCommand(options);
   if (command === "init") return initCommand(options);
@@ -225,7 +249,7 @@ if (isEntrypoint) {
       process.exitCode = code;
     })
     .catch((error) => {
-      process.stderr.write(`Armonia: ${error.message}\n`);
+      process.stderr.write(`Armonia: ${safeText(error.message)}\n`);
       process.exitCode = 2;
     });
 }

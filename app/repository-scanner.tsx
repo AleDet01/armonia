@@ -3,19 +3,18 @@
 import { useEffect, useRef, useState } from "react";
 import { scanSelectedFiles, type BrowserScanReport } from "./browser-scan";
 
-function severityLabel(severity: string) {
-  return severity === "critical" ? "critical" : severity;
-}
-
 export function RepositoryScanner() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [report, setReport] = useState<BrowserScanReport | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     inputRef.current?.setAttribute("webkitdirectory", "");
+    return () => { if (copyTimer.current) clearTimeout(copyTimer.current); };
   }, []);
 
   const folderName = files[0]?.webkitRelativePath.split("/")[0] || "No folder selected";
@@ -24,8 +23,11 @@ export function RepositoryScanner() {
     if (files.length === 0) return;
     setIsScanning(true);
     setReport(null);
+    setError(null);
     try {
       setReport(await scanSelectedFiles(files));
+    } catch {
+      setError("The folder could not be scanned. Choose it again and retry.");
     } finally {
       setIsScanning(false);
     }
@@ -37,9 +39,11 @@ export function RepositoryScanner() {
         "node bin/armonia.mjs scan /path/to/repository --fail-on never",
       );
       setCopied(true);
-      window.setTimeout(() => setCopied(false), 2_000);
+      if (copyTimer.current) clearTimeout(copyTimer.current);
+      copyTimer.current = setTimeout(() => setCopied(false), 2_000);
     } catch {
       setCopied(false);
+      setError("Clipboard access is unavailable. Select and copy the command above.");
     }
   }
 
@@ -52,12 +56,14 @@ export function RepositoryScanner() {
     const link = document.createElement("a");
     link.href = url;
     link.download = "armonia-browser-report.json";
+    document.body.append(link);
     link.click();
-    URL.revokeObjectURL(url);
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
   }
 
   return (
-    <section className="repository-scanner" id="scan" aria-labelledby="scan-title">
+    <section className="repository-scanner" id="scan" aria-labelledby="scan-title" aria-busy={isScanning}>
       <div className="scanner-heading">
         <div>
           <span className="section-index">03 / Browser demo</span>
@@ -74,10 +80,13 @@ export function RepositoryScanner() {
         className="directory-input"
         type="file"
         multiple
+        disabled={isScanning}
+        tabIndex={-1}
         aria-label="Choose a repository folder"
         onChange={(event) => {
           setFiles(Array.from(event.target.files ?? []));
           setReport(null);
+          setError(null);
         }}
       />
 
@@ -88,7 +97,7 @@ export function RepositoryScanner() {
           <small>{files.length > 0 ? `${files.length} files selected` : "Choose a repository root"}</small>
         </div>
         <div className="scanner-actions">
-          <button className="button button-quiet" type="button" onClick={() => inputRef.current?.click()}>
+          <button className="button button-quiet" type="button" disabled={isScanning} onClick={() => inputRef.current?.click()}>
             Choose folder
           </button>
           <button className="button button-primary" type="button" disabled={files.length === 0 || isScanning} onClick={scanFolder}>
@@ -98,8 +107,9 @@ export function RepositoryScanner() {
       </div>
 
       <p className="scanner-note">
-        Reads supported text files up to 500 KB. Dependency folders, build output and hidden VCS folders stay out of scope.
+        Preview of selected checks, not a security audit. Up to 3,000 text files, 512 KB each and 64 MiB total. Dependency and build folders are excluded.
       </p>
+      {error && <p className="scanner-note" role="alert">{error}</p>}
 
       <div className="scanner-cli-hint">
         <span>Prefer a repeatable terminal check?</span>
@@ -130,16 +140,16 @@ export function RepositoryScanner() {
             <div>
               <span>Findings</span>
               <strong>{report.findings.length}</strong>
-              <small>{report.counts.error} errors · {report.counts.warning} warnings</small>
+              <small>{report.counts.critical} critical · {report.counts.error} errors · {report.counts.warning} warnings</small>
             </div>
           </div>
 
           <div className="scanner-findings">
             {report.findings.length === 0 ? (
               <p className="scanner-empty">No conflicts found in the selected files.</p>
-            ) : report.findings.slice(0, 6).map((finding) => (
-              <article className="scanner-finding" key={`${finding.ruleId}-${finding.message}`}>
-                <span className={`finding-severity severity-${finding.severity}`}>{severityLabel(finding.severity)}</span>
+            ) : report.findings.slice(0, 6).map((finding, index) => (
+              <article className="scanner-finding" key={`${finding.ruleId}-${index}`}>
+                <span className={`finding-severity severity-${finding.severity}`}>{finding.severity}</span>
                 <div>
                   <strong>{finding.message}</strong>
                   <p>{finding.detail}</p>

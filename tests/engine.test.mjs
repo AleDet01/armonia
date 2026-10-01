@@ -5,6 +5,10 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { scanRepository, toSarif } from "../src/core/report.mjs";
+import { repositoryFixture } from "./helpers.mjs";
+import { collectFacts } from "../src/core/collectors.mjs";
+import { runChecks } from "../src/core/checks.mjs";
+import { readTextFiles, walkFiles } from "../src/core/files.mjs";
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -133,4 +137,140 @@ test("the CLI returns the threshold exit code without leaking absolute paths", a
   assert.equal(report.schemaVersion, 1);
   assert.equal(report.repository.root, ".");
   assert.doesNotMatch(result.stdout, /C:\\\\Users/i);
+});
+
+test("missing or non-directory scan roots are errors rather than clean reports", async (context) => {
+  const root = await repositoryFixture(context, { "file.txt": "text" });
+  await assert.rejects(scanRepository(path.join(root, "missing")));
+  await assert.rejects(scanRepository(path.join(root, "file.txt")));
+});
+
+test("file coverage is bounded, explicit, and the exact traversal limit is not truncated", async (context) => {
+  const root = await repositoryFixture(context, { "README.md": "x".repeat(2048), "LICENSE": "MIT", "src/binary.ts": Buffer.from([0, 1, 2]) });
+  assert.equal((await walkFiles(root, { maxFiles: 3 })).truncated, false);
+  assert.equal((await walkFiles(root, { maxFiles: 2 })).truncated, true);
+  const report = await scanRepository(root, { config: { maxFileBytes: 1024 } });
+  assert.equal(report.repository.skipped.length, 2);
+  assert.ok(report.findings.some((item) => item.ruleId === "scan/incomplete"));
+});
+
+test("invalid manifest shapes never crash the scanner", async (context) => {
+  for (const manifest of [null, [], "text", { scripts: "test" }, { engines: { node: 22 } }, { dependencies: [] }]) {
+    const root = await repositoryFixture(context, { "package.json": JSON.stringify(manifest), "README.md": "```bash\nnpm run test\n```" });
+    const report = await scanRepository(root);
+    assert.ok(report.findings.some((item) => item.ruleId === "manifest/invalid-json"));
+  }
+});
+
+test("secrets in docs, manifests and workflows cannot leak through any reporter", async (context) => {
+  const secret = ["gh", "p_", "a".repeat(30)].join("");
+  const root = await repositoryFixture(context, {
+    "README.md": `# Example\n[Link](docs/${secret})\n`,
+    "package.json": JSON.stringify({ scripts: { test: `TOKEN=${secret} node --test` } }),
+    ".github/workflows/ci.yml": `permissions: {}\njobs:\n  test:\n    steps:\n      - run: npm run ${secret}\n`,
+  });
+  const report = await scanRepository(root);
+  assert.equal(report.counts.critical, 3);
+  assert.ok(!JSON.stringify(report).includes(secret));
+  assert.ok(!JSON.stringify(toSarif(report)).includes(secret));
+  const { formatTerminal } = await import("../src/core/report.mjs");
+  assert.ok(!formatTerminal(report).includes(secret));
+});
+
+test("workflow blocks, explicit permissions and own script properties are understood", async (context) => {
+  const root = await repositoryFixture(context, {
+    "package.json": JSON.stringify({ engines: { node: ">=22" }, scripts: { test: "node --test" } }),
+    "README.md": "# Example\nNode 24\n```bash\nnpm run toString\n```",
+    ".github/workflows/ci.yml": "permissions: {}\njobs:\n  test:\n    steps:\n      - run: |\n          npm run absent\n          npm test\n      - uses: actions/setup-node@v4\n        with:\n          node-version: 24\n",
+  });
+  const report = await scanRepository(root);
+  const missing = report.findings.filter((item) => item.ruleId === "command/missing-script");
+  assert.equal(missing.length, 2);
+  assert.ok(missing.some((item) => item.evidence[0].line === 6));
+  assert.ok(!report.findings.some((item) => ["runtime/node-drift", "security/workflow-permissions"].includes(item.ruleId)));
+});
+
+test("fingerprints do not depend on evidence collection order", async (context) => {
+  const root = await repositoryFixture(context, { "README.md": "# Example\nNode 20", "package.json": JSON.stringify({ engines: { node: ">=22" } }) });
+  const facts = await collectFacts(root);
+  const first = runChecks(facts).find((item) => item.ruleId === "runtime/node-drift");
+  facts.runtimes.reverse();
+  const second = runChecks(facts).find((item) => item.ruleId === "runtime/node-drift");
+  assert.equal(first.fingerprint, second.fingerprint);
+});
+
+test("relative links are case-sensitive and empty directories are valid targets", async (context) => {
+  const root = await repositoryFixture(context, { "README.md": "[wrong](guide.md) [empty](empty/) [root](./)", "Guide.md": "# Guide" });
+  await mkdir(path.join(root, "empty"));
+  const report = await scanRepository(root);
+  assert.equal(report.findings.filter((item) => item.ruleId === "docs/broken-relative-link").length, 1);
+});
+
+test("Docker runtime user is checked in the final stage including inherited stages", async (context) => {
+  for (const [docker, expected] of [
+    ["FROM node:22 AS build\nUSER node\nFROM node:22\n", true],
+    ["FROM node:22\nUSER root\n", true],
+    ["FROM node:22 AS build\nUSER node\nFROM build\n", false],
+    ["FROM node:22\nUSER 1000:1000\n", false],
+  ]) {
+    const root = await repositoryFixture(context, { Dockerfile: docker });
+    const report = await scanRepository(root);
+    assert.equal(report.findings.some((item) => item.ruleId === "security/container-root"), expected);
+  }
+});
+
+test("independent nested packages are not forced into a single Node runtime", async (context) => {
+  const root = await repositoryFixture(context, {
+    "apps/one/package.json": JSON.stringify({ engines: { node: "20" } }),
+    "apps/one/README.md": "# One\nNode 20",
+    "apps/two/package.json": JSON.stringify({ engines: { node: "24" } }),
+    "apps/two/README.md": "# Two\nNode 24",
+  });
+  const report = await scanRepository(root);
+  assert.ok(!report.findings.some((item) => item.ruleId === "runtime/node-drift"));
+});
+
+test("exclude double-star patterns include zero-depth matches", async (context) => {
+  const root = await repositoryFixture(context, { "ignored.ts": "root", "src/ignored.ts": "nested", "src/keep.ts": "keep" });
+  const walk = await walkFiles(root, { exclude: ["**/ignored.ts"] });
+  assert.deepEqual(walk.files, ["src/keep.ts"]);
+});
+
+test("text retention stops at the aggregate size budget deterministically", async (context) => {
+  const content = "x".repeat(512_000);
+  const files = Object.fromEntries(Array.from({ length: 140 }, (_, index) => [`src/${String(index).padStart(3, "0")}.txt`, content]));
+  const root = await repositoryFixture(context, files);
+  const { files: discovered } = await walkFiles(root);
+  const result = await readTextFiles(root, discovered);
+  const bytes = [...result.texts.values()].reduce((sum, text) => sum + Buffer.byteLength(text), 0);
+  assert.ok(bytes <= 64 * 1024 * 1024);
+  assert.equal(result.texts.size, 131);
+  assert.equal(result.skipped.length, 9);
+  assert.ok(result.skipped.every((item) => item.reason === "total text size limit"));
+  assert.deepEqual([...result.texts.keys()], discovered.slice(0, 131));
+});
+
+test("directory junctions are excluded from discovery", async (context) => {
+  const { symlink } = await import("node:fs/promises");
+  const root = await repositoryFixture(context, { "README.md": "# Example" });
+  const external = await repositoryFixture(context, { "secret.txt": "outside root" });
+  await symlink(external, path.join(root, "linked"), process.platform === "win32" ? "junction" : "dir");
+  const walk = await walkFiles(root);
+  assert.deepEqual(walk.files, ["README.md"]);
+  await assert.rejects(scanRepository(path.join(root, "linked")));
+});
+
+test("discovery order is ordinal rather than locale-dependent", async (context) => {
+  const names = ["Z.txt", "a.txt", "Ä.txt"];
+  const root = await repositoryFixture(context, Object.fromEntries(names.map((name) => [name, "text"])));
+  const walk = await walkFiles(root);
+  assert.deepEqual(walk.files, names.toSorted());
+});
+
+test("bounded readers retain empty files and files exactly at the size limit", async (context) => {
+  const root = await repositoryFixture(context, { "empty.txt": "", "exact.txt": "x".repeat(1024) });
+  const result = await readTextFiles(root, ["empty.txt", "exact.txt"], 1024);
+  assert.equal(result.texts.get("empty.txt"), "");
+  assert.equal(result.texts.get("exact.txt").length, 1024);
+  assert.deepEqual(result.skipped, []);
 });

@@ -1,10 +1,7 @@
 import type { NextConfig } from "next";
+import { pagesDeployment } from "./src/site/pages.mjs";
 
-const repositoryName = process.env.GITHUB_REPOSITORY?.split("/")[1];
-const githubPagesAssetPrefix =
-  process.env.GITHUB_ACTIONS === "true" && repositoryName
-    ? `/${repositoryName}`
-    : undefined;
+const { prefix: githubPagesAssetPrefix } = pagesDeployment();
 
 const nextConfig: NextConfig = {
   // The product has no server dependency: export the same interactive surface

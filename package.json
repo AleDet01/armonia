@@ -35,22 +35,21 @@
   },
   "scripts": {
     "dev": "vinext dev",
-    "build": "vinext build",
+    "build": "vinext build && node scripts/prepare-static.mjs",
     "start": "vinext start",
     "scan": "node bin/armonia.mjs scan .",
     "scan:json": "node bin/armonia.mjs scan . --format json --output .armonia/report.json",
     "portfolio:example": "node bin/armonia.mjs portfolio --registry examples/portfolio/registry.json --output .armonia/portfolio-snapshot.json",
-    "test": "node --experimental-strip-types --test tests/engine.test.mjs tests/browser-scan.test.mjs",
+    "test": "node --experimental-strip-types --test tests/engine.test.mjs tests/browser-scan.test.mjs tests/cli.test.mjs tests/config.test.mjs",
     "test:site": "npm run build && node --test tests/rendered-html.test.mjs",
-    "check": "npm run lint && npm test && npm run build && node --test tests/rendered-html.test.mjs && npm run scan",
+    "check": "npm run lint && npm run typecheck && npm test && npm run build && node --test tests/rendered-html.test.mjs && npm run scan",
+    "typecheck": "tsc --noEmit",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "prepublishOnly": "npm run check"
   },
-  "dependencies": {
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0"
-  },
   "devDependencies": {
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
     "@eslint/js": "9.39.4",
     "@next/eslint-plugin-next": "16.2.6",
     "@tailwindcss/postcss": "4.2.1",

@@ -7,6 +7,8 @@ impact, not certainty about which source should change.
 
 - `scan/file-limit` — the evidence set is incomplete because traversal reached
   its configured limit.
+- `scan/incomplete` — text candidates or directories could not be fully read;
+  evidence includes skip reasons and the JSON report lists skipped paths.
 
 ## Documentation
 
@@ -18,7 +20,8 @@ impact, not certainty about which source should change.
 
 ## Delivery and dependencies
 
-- `manifest/invalid-json` — a package manifest cannot be parsed.
+- `manifest/invalid-json` — a package manifest cannot be parsed or has invalid
+  object/string field types for the fields the scanner consumes.
 - `manifest/missing-entrypoint` — `main`, `module`, or `types` points to a file
   absent from the repository snapshot.
 - `package-manager/multiple-lockfiles` — one workspace has competing lockfile
@@ -33,8 +36,9 @@ impact, not certainty about which source should change.
 
 ## Runtime
 
-- `runtime/node-drift` — Node majors disagree across manifest, docs, CI, or a
-  container base.
+- `runtime/node-drift` — simple major-level requirements are incompatible across
+  manifest, docs, CI, or a container base within the nearest package scope.
+  Lower bounds are respected; complex ranges and dynamic values are unknown.
 - `runtime/port-drift` — one documented local port disagrees with one exposed
   container port.
 - `environment/undocumented` — source uses a variable missing from environment
@@ -45,9 +49,11 @@ impact, not certainty about which source should change.
 - `security/floating-action` — a GitHub Action uses a mutable branch ref.
 - `security/workflow-permissions` — a workflow leaves token permissions implicit.
 - `security/floating-container-image` — a container uses a `latest` base tag.
-- `security/container-root` — a Dockerfile has no runtime `USER` declaration.
+- `security/container-root` — the final Docker stage has no explicit non-root
+  `USER`, or explicitly uses `root`/UID `0`. Named-stage user inheritance is
+  considered; image-defined default users cannot be inferred offline.
 - `security/possible-secret` — a high-confidence credential shape appears in
-  source; the matched value is never included in a report.
+  supported text; the recognized value is redacted across report fields.
 - `security/env-file-present` — a non-example environment file is present and
   deserves an ignore check.
 

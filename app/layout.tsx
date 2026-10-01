@@ -1,11 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { pagesDeployment } from "../src/site/pages.mjs";
 
-const githubRepository = process.env.GITHUB_REPOSITORY?.split("/");
-const githubPagesUrl =
-  process.env.GITHUB_ACTIONS === "true" && githubRepository?.[0] && githubRepository[1]
-    ? `https://${githubRepository[0]}.github.io/${githubRepository[1]}/`
-    : "http://localhost:3000/";
+const { url: githubPagesUrl } = pagesDeployment();
 
 export const metadata: Metadata = {
   metadataBase: new URL(githubPagesUrl),
@@ -14,7 +11,7 @@ export const metadata: Metadata = {
     template: "%s · Armonia",
   },
   description:
-    "An open-source evidence engine that finds contradictions across code, docs, CI, containers, and connected repositories.",
+    "Local-first consistency checks across documentation, manifests, CI, containers and source code.",
   openGraph: {
     title: "Armonia — Repository truth, reconciled",
     description: "Turn scattered repository claims into one verifiable evidence graph.",

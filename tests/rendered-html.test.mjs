@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
+import { pagesDeployment } from "../src/site/pages.mjs";
 import test from "node:test";
 
 async function readStaticPage() {
@@ -15,6 +16,22 @@ test("static export contains the finished Armonia product surface", async () => 
   assert.match(html, /format sarif/);
   assert.match(html, /_next\/static/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|Starter Project/);
+});
+
+test("every local exported asset resolves under the deployed Pages mount", async () => {
+  const html = await readStaticPage();
+  const { prefix, url } = pagesDeployment();
+  let verified = 0;
+  for (const match of html.matchAll(/(?:src|href)="([^"#]+)"/g)) {
+    const asset = match[1];
+    if (/^(?:https?:|data:)/.test(asset)) continue;
+    const resolved = new URL(asset, url);
+    if (prefix) assert.ok(resolved.pathname.startsWith(`${prefix}/`), asset);
+    const relative = decodeURIComponent(resolved.pathname.slice(prefix.length).replace(/^\//, ""));
+    await access(new URL(`../dist/client/${relative}`, import.meta.url));
+    verified += 1;
+  }
+  assert.ok(verified >= 5);
 });
 
 test("the starter preview is removed and accessibility affordances remain", async () => {

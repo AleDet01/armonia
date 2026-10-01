@@ -16,6 +16,7 @@ package. Do not tag or publish when any required item is unknown.
 ```bash
 npm ci --ignore-scripts
 npm run check
+npm audit --audit-level=moderate
 npm pack --dry-run
 ```
 
@@ -27,12 +28,15 @@ README, and license should be included.
 
 After creating the remote repository:
 
-1. Protect `main`: require pull requests and the `ci / verify` check before merging.
+1. Protect `main`: require pull requests and the `verify` job from the `CI` workflow before merging.
 2. Enable Dependabot alerts and version updates.
 3. Enable private vulnerability reporting and verify the instructions in `SECURITY.md`.
 4. Enable secret-scanning push protection where the GitHub plan supports it.
 5. Add the actual repository URL to `package.json` before any npm publication.
 6. Create a GitHub Release from an annotated, signed tag when signing is available.
+7. Enable Pages with GitHub Actions as the publishing source. Confirm the
+   deployed site loads its CSS, JavaScript, logo and browser scanner, not merely
+   its HTML. Publication is separate from a successful local static build.
 
 ## npm publication
 

@@ -1,3 +1,5 @@
+import { compareText, nodeMajorsConflict, safeText, secretPatterns, STANDARD_ENV, validManifest } from "../src/core/text.mjs";
+
 export type BrowserEvidence = {
   source: string;
   line: number;
@@ -23,20 +25,20 @@ export type BrowserScanReport = {
 };
 
 type TextFile = { path: string; text: string };
-type Runtime = { major: number; source: string; line: number };
+type Runtime = { major: number; raw: string; source: string; line: number };
 type Port = { value: number; kind: "documentation" | "container"; source: string; line: number };
 type EnvUse = { name: string; source: string; line: number };
 
 const IGNORED_DIRECTORIES = new Set([
   ".git", ".hg", ".svn", ".next", ".vinext", ".wrangler", ".turbo",
-  ".cache", ".venv", "venv", "node_modules", "coverage", "dist", "out",
+  ".cache", ".codex-tmp", ".armonia", ".venv", "venv", "node_modules", "coverage", "dist", "out",
   "target", "vendor", "__pycache__",
 ]);
 
 const TEXT_EXTENSIONS = new Set([
   "c", "cc", "conf", "cpp", "cs", "css", "dockerfile", "env", "go", "h",
   "hpp", "html", "ini", "java", "js", "json", "jsx", "kt", "md", "mdx",
-  "mjs", "mts", "php", "properties", "ps1", "py", "rb", "rs", "sh", "toml",
+  "mjs", "mts", "cjs", "cts", "php", "properties", "ps1", "py", "rb", "rs", "sh", "toml",
   "ts", "tsx", "txt", "xml", "yaml", "yml",
 ]);
 
@@ -60,7 +62,8 @@ function isTextCandidate(path: string) {
   const extension = name.split(".").pop() ?? "";
   return (
     TEXT_EXTENSIONS.has(extension) ||
-    ["dockerfile", "gemfile", "makefile", "procfile", "license", "notice", ".gitignore", ".npmrc"].includes(name) ||
+    ["dockerfile", "gemfile", "makefile", "procfile", "license", "notice", "copying", ".nvmrc", ".node-version", ".gitignore", ".npmrc"].includes(name) ||
+    name.startsWith("dockerfile.") ||
     name.startsWith("readme") ||
     name.startsWith("license") ||
     name.startsWith(".env")
@@ -72,20 +75,21 @@ function normalizeFiles(files: FileList | File[]) {
     file,
     path: (file.webkitRelativePath || file.name).replaceAll("\\", "/"),
   }));
-  const root = selected.length > 0 && selected.every(({ path }) => path.includes("/"))
+  const root = selected.length > 0 && selected.every(({ path }) => path.includes("/") && path.split("/")[0] === selected[0].path.split("/")[0])
     ? selected[0].path.split("/")[0]
     : null;
   return selected
     .map(({ file, path }) => ({ file, path: root && path.startsWith(`${root}/`) ? path.slice(root.length + 1) : path }))
-    .filter(({ path }) => path && !path.split("/").some((part) => IGNORED_DIRECTORIES.has(part.toLowerCase())))
-    .filter(({ path }) => isTextCandidate(path));
+    .filter(({ path }) => path && !path.split("/").slice(0, -1).some((part) => IGNORED_DIRECTORIES.has(part.toLowerCase())))
+    .filter(({ path }) => isTextCandidate(path))
+    .sort((a, b) => compareText(a.path, b.path));
 }
 
 function addFinding(
   findings: BrowserFinding[],
   finding: Omit<BrowserFinding, "evidence"> & { evidence?: BrowserEvidence[] },
 ) {
-  findings.push({ ...finding, evidence: finding.evidence ?? [] });
+  findings.push({ ...finding, message: safeText(finding.message), detail: safeText(finding.detail), suggestion: safeText(finding.suggestion), evidence: (finding.evidence ?? []).map((item) => ({ ...item, source: safeText(item.source) })) });
 }
 
 function score(findings: BrowserFinding[]) {
@@ -96,7 +100,8 @@ function score(findings: BrowserFinding[]) {
     counts[finding.severity] += 1;
     value -= penalties[finding.severity];
   }
-  const result = Math.max(0, value);
+  const ceiling = counts.critical ? 49 : counts.error ? 79 : counts.warning ? 94 : 100;
+  const result = Math.max(0, Math.min(ceiling, value));
   const grade = result >= 95 ? "A+" : result >= 90 ? "A" : result >= 80 ? "B" : result >= 70 ? "C" : result >= 60 ? "D" : "F";
   return { score: result, grade, counts };
 }
@@ -111,15 +116,22 @@ export async function scanSelectedFiles(files: FileList | File[]): Promise<Brows
   let skipped = Math.max(0, candidates.length - selected.length);
   const texts: TextFile[] = [];
 
-  await Promise.all(selected.map(async ({ file, path }) => {
-    if (file.size > 512_000) {
-      skipped += 1;
-      return;
-    }
-    const text = await file.text();
-    if (!text.includes("\0")) texts.push({ path, text });
-  }));
-  texts.sort((a, b) => a.path.localeCompare(b.path));
+  let retainedBytes = 0;
+  const admitted = selected.filter(({ file }) => {
+    if (file.size > 512_000 || retainedBytes + file.size > 64 * 1024 * 1024) { skipped += 1; return false; }
+    retainedBytes += file.size;
+    return true;
+  });
+  for (let offset = 0; offset < admitted.length; offset += 8) {
+    await Promise.all(admitted.slice(offset, offset + 8).map(async ({ file, path }) => {
+      try {
+        const text = await file.text();
+        if (text.includes("\0")) skipped += 1;
+        else texts.push({ path, text });
+      } catch { skipped += 1; }
+    }));
+  }
+  texts.sort((a, b) => compareText(a.path, b.path));
 
   const findings: BrowserFinding[] = [];
   const runtimes: Runtime[] = [];
@@ -135,7 +147,7 @@ export async function scanSelectedFiles(files: FileList | File[]): Promise<Brows
     if (README.test(path)) {
       hasReadme = true;
       for (const match of text.matchAll(/Node(?:\.js)?\s*(?:version\s*)?(?:>=|>|=|v)?\s*(\d{1,3})(?:\.\d+){0,2}/gi)) {
-        runtimes.push({ major: Number(match[1]), source: path, line: lineNumber(text, match.index) });
+        runtimes.push({ major: Number(match[1]), raw: match[0], source: path, line: lineNumber(text, match.index) });
         claims += 1;
       }
       for (const match of text.matchAll(/(?:localhost|127\.0\.0\.1|0\.0\.0\.0):([1-9]\d{1,4})/g)) {
@@ -148,10 +160,11 @@ export async function scanSelectedFiles(files: FileList | File[]): Promise<Brows
     if (base === "package.json") {
       try {
         const manifest = JSON.parse(text) as { engines?: { node?: string } };
+        if (!validManifest(manifest)) throw new Error("Invalid manifest shape");
         if (manifest.engines?.node) {
           const major = majorVersion(manifest.engines.node);
           if (major !== null) {
-            runtimes.push({ major, source: path, line: lineNumber(text, text.indexOf("\"node\"")) });
+            runtimes.push({ major, raw: manifest.engines.node, source: path, line: lineNumber(text, text.indexOf("\"node\"")) });
             claims += 1;
           }
         }
@@ -159,7 +172,7 @@ export async function scanSelectedFiles(files: FileList | File[]): Promise<Brows
         addFinding(findings, {
           ruleId: "manifest/invalid-json",
           severity: "error",
-          message: `${path} is not valid JSON`,
+          message: `${path} is not a valid package manifest`,
           detail: "The manifest could not be read.",
           suggestion: "Fix the JSON syntax.",
           evidence: [{ source: path, line: 1 }],
@@ -171,7 +184,7 @@ export async function scanSelectedFiles(files: FileList | File[]): Promise<Brows
       for (const match of text.matchAll(/node-version:\s*["']?([^\s#"']+)/gi)) {
         const major = majorVersion(match[1]);
         if (major !== null) {
-          runtimes.push({ major, source: path, line: lineNumber(text, match.index) });
+          runtimes.push({ major, raw: match[1], source: path, line: lineNumber(text, match.index) });
           claims += 1;
         }
       }
@@ -181,7 +194,7 @@ export async function scanSelectedFiles(files: FileList | File[]): Promise<Brows
       for (const match of text.matchAll(/^\s*FROM\s+node:([^\s@]+)/gim)) {
         const major = majorVersion(match[1]);
         if (major !== null) {
-          runtimes.push({ major, source: path, line: lineNumber(text, match.index) });
+          runtimes.push({ major, raw: match[1], source: path, line: lineNumber(text, match.index) });
           claims += 1;
         }
       }
@@ -212,23 +225,31 @@ export async function scanSelectedFiles(files: FileList | File[]): Promise<Brows
     if (SOURCE_EXTENSION.test(path)) {
       for (const match of text.matchAll(/process\.env(?:\.([A-Z][A-Z0-9_]*)|\[["']([A-Z][A-Z0-9_]*)["']\])/g)) {
         const name = match[1] || match[2];
+        if (text.slice((match.index ?? 0) + match[0].length).trimStart().startsWith("??=")) continue;
         envUses.push({ name, source: path, line: lineNumber(text, match.index) });
         claims += 1;
       }
-      for (const pattern of [/\bAKIA[0-9A-Z]{16}\b/g, /\bgh[pousr]_[A-Za-z0-9_]{24,}\b/g, /\bsk-(?:proj-)?[A-Za-z0-9_-]{20,}\b/g, /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/g]) {
-        for (const match of text.matchAll(pattern)) {
-          addFinding(findings, {
-            ruleId: "security/possible-secret",
-            severity: "critical",
-            message: `Possible credential in ${path}`,
-            detail: "The matched value is redacted in this browser report.",
-            suggestion: "Revoke the value and remove it from repository history.",
-            evidence: [{ source: path, line: lineNumber(text, match.index) }],
-          });
-        }
+    }
+    for (const pattern of secretPatterns()) {
+      for (const match of text.matchAll(pattern)) {
+        addFinding(findings, {
+          ruleId: "security/possible-secret",
+          severity: "critical",
+          message: `Possible credential in ${path}`,
+          detail: "The matched value is redacted in this browser report.",
+          suggestion: "Revoke the value and remove it from repository history.",
+          evidence: [{ source: path, line: lineNumber(text, match.index) }],
+        });
       }
     }
   }
+
+  if (skipped) addFinding(findings, {
+    ruleId: "scan/incomplete", severity: "warning",
+    message: `${skipped} supported files could not be inspected`,
+    detail: "This preview is incomplete because of size limits, binary content or read failures.",
+    suggestion: "Review skipped files using the CLI on a stable checkout.",
+  });
 
   if (texts.length === 0) {
     addFinding(findings, {
@@ -261,7 +282,7 @@ export async function scanSelectedFiles(files: FileList | File[]): Promise<Brows
   }
 
   const nodeVersions = [...new Set(runtimes.map((item) => item.major))].sort((a, b) => a - b);
-  if (nodeVersions.length > 1) {
+  if (nodeMajorsConflict(runtimes.map((item) => item.raw))) {
     addFinding(findings, {
       ruleId: "runtime/node-drift",
       severity: "error",
@@ -273,7 +294,9 @@ export async function scanSelectedFiles(files: FileList | File[]): Promise<Brows
   }
   const documentedPort = ports.find((item) => item.kind === "documentation");
   const containerPort = ports.find((item) => item.kind === "container");
-  if (documentedPort && containerPort && documentedPort.value !== containerPort.value) {
+  const documentedPorts = new Set(ports.filter((item) => item.kind === "documentation").map((item) => item.value));
+  const containerPorts = new Set(ports.filter((item) => item.kind === "container").map((item) => item.value));
+  if (documentedPorts.size === 1 && containerPorts.size === 1 && documentedPort && containerPort && documentedPort.value !== containerPort.value) {
     addFinding(findings, {
       ruleId: "runtime/port-drift",
       severity: "error",
@@ -283,8 +306,8 @@ export async function scanSelectedFiles(files: FileList | File[]): Promise<Brows
       evidence: [documentedPort, containerPort].map(({ source, line }) => ({ source, line })),
     });
   }
-  for (const use of envUses) {
-    if (["CI", "NODE_ENV"].includes(use.name) || envDeclarations.has(use.name)) continue;
+  for (const use of new Map(envUses.map((item) => [item.name, item])).values()) {
+    if (STANDARD_ENV.has(use.name) || envDeclarations.has(use.name)) continue;
     addFinding(findings, {
       ruleId: "environment/undocumented",
       severity: "warning",
@@ -297,7 +320,7 @@ export async function scanSelectedFiles(files: FileList | File[]): Promise<Brows
 
   findings.sort((a, b) => {
     const order = { critical: 0, error: 1, warning: 2, info: 3 };
-    return order[a.severity] - order[b.severity] || a.ruleId.localeCompare(b.ruleId);
+    return order[a.severity] - order[b.severity] || compareText(a.ruleId, b.ruleId);
   });
   return { files: texts.length, skipped, claims, findings, ...score(findings) };
 }

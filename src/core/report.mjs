@@ -2,21 +2,29 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { collectFacts } from "./collectors.mjs";
 import { runChecks, scoreFindings } from "./checks.mjs";
+import { validateConfig } from "./config.mjs";
+import { compareText, safeText } from "./text.mjs";
 
 export const REPORT_SCHEMA_VERSION = 1;
+export const TOOL_VERSION = JSON.parse(await readFile(new URL("../../package.json", import.meta.url), "utf8")).version;
 
 export async function readConfig(root, explicitPath) {
   const candidates = explicitPath
     ? [path.resolve(root, explicitPath)]
     : ["armonia.config.json", ".armoniarc.json"].map((name) => path.join(root, name));
   for (const candidate of candidates) {
+    let text;
     try {
-      return JSON.parse(await readFile(candidate, "utf8"));
+      text = await readFile(candidate, "utf8");
     } catch (error) {
       if (error?.code === "ENOENT" && !explicitPath) continue;
       if (error?.code === "ENOENT") throw new Error(`Configuration not found: ${candidate}`);
-      throw new Error(`Invalid Armonia configuration at ${candidate}: ${error.message}`);
+      throw new Error(`Cannot read Armonia configuration: ${error.code ?? "read failure"}`);
     }
+    let config;
+    try { config = JSON.parse(text); }
+    catch { throw new Error("Armonia configuration is not valid JSON"); }
+    return validateConfig(config);
   }
   return {};
 }
@@ -59,14 +67,14 @@ function buildGraph(findings) {
     }
   }
   return {
-    nodes: [...nodeMap.values()].sort((a, b) => a.id.localeCompare(b.id)),
+    nodes: [...nodeMap.values()].sort((a, b) => compareText(a.id, b.id)),
     edges,
   };
 }
 
 export async function scanRepository(root = ".", options = {}) {
   const absoluteRoot = path.resolve(root);
-  const config = options.config ?? (await readConfig(absoluteRoot, options.configPath));
+  const config = validateConfig(options.config ?? (await readConfig(absoluteRoot, options.configPath)));
   const facts = await collectFacts(absoluteRoot, config);
   const findings = runChecks(facts, config);
   const scoring = scoreFindings(findings);
@@ -75,13 +83,14 @@ export async function scanRepository(root = ".", options = {}) {
 
   return {
     schemaVersion: REPORT_SCHEMA_VERSION,
-    tool: { name: "armonia", version: "0.1.0" },
+    tool: { name: "armonia", version: TOOL_VERSION },
     repository: {
-      name: config.name ?? facts.name,
-      root: options.includeAbsolutePath ? absoluteRoot : ".",
+      name: safeText(config.name ?? facts.name),
+      root: options.includeAbsolutePath ? safeText(absoluteRoot) : ".",
       files: facts.files.length,
       claims: countClaims(facts),
       truncated: facts.truncated,
+      skipped: facts.skipped.map((item) => ({ source: safeText(item.source), reason: item.reason })),
     },
     score: scoring.score,
     grade: scoring.grade,
@@ -116,7 +125,7 @@ export function toSarif(report) {
           driver: {
             name: "Armonia",
             version: report.tool.version,
-            informationUri: "https://github.com/armonia-dev/armonia",
+            informationUri: "https://github.com/AleDet01/Armonia",
             rules: [...rules.values()],
           },
         },
@@ -126,7 +135,7 @@ export function toSarif(report) {
           message: { text: finding.message },
           locations: finding.evidence.slice(0, 1).map((item) => ({
             physicalLocation: {
-              artifactLocation: { uri: item.source },
+              artifactLocation: { uri: item.source.split("/").map(encodeURIComponent).join("/") },
               region: { startLine: Math.max(1, item.line || 1) },
             },
           })),
@@ -134,7 +143,7 @@ export function toSarif(report) {
             id: index + 1,
             message: { text: `${item.label}: ${item.value}` },
             physicalLocation: {
-              artifactLocation: { uri: item.source },
+              artifactLocation: { uri: item.source.split("/").map(encodeURIComponent).join("/") },
               region: { startLine: Math.max(1, item.line || 1) },
             },
           })),
