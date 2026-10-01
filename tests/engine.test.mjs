@@ -22,6 +22,8 @@ async function fixture(files) {
 
 test("a coherent repository produces a perfect, deterministic report", async (context) => {
   const envAccess = ["process", "env", "DATABASE_URL"].join(".");
+  const githubActions = ["process", "env", "GITHUB_ACTIONS"].join(".");
+  const githubRepository = ["process", "env", "GITHUB_REPOSITORY"].join(".");
   const root = await fixture({
     "package.json": JSON.stringify({
       name: "coherent",
@@ -34,7 +36,7 @@ test("a coherent repository produces a perfect, deterministic report", async (co
     "README.md": "# Coherent\n\nNode 22\n\n```bash\nnpm test\nnpm run build\n```\n\n[Guide](docs/guide.md)\n",
     "docs/guide.md": "# Guide\n",
     ".env.example": "DATABASE_URL=postgres://example\n",
-    "src/index.mjs": `export const url = ${envAccess};\n`,
+    "src/index.mjs": `export const url = ${envAccess};\nexport const isCi = ${githubActions};\nexport const repository = ${githubRepository};\n`,
     ".github/workflows/ci.yml": "permissions:\n  contents: read\njobs:\n  test:\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: 22\n      - run: npm test\n",
     "LICENSE": "MIT License\n",
     "CONTRIBUTING.md": "# Contributing\n",

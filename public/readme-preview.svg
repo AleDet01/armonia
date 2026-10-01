@@ -1,0 +1,39 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title description">
+  <title id="title">Armonia interface preview</title>
+  <desc id="description">A dark, animated-style consistency field beside the Armonia headline.</desc>
+  <defs>
+    <filter id="blur-xl" x="-45%" y="-45%" width="190%" height="190%"><feGaussianBlur stdDeviation="54"/></filter>
+    <filter id="blur-md" x="-55%" y="-55%" width="210%" height="210%"><feGaussianBlur stdDeviation="23"/></filter>
+    <linearGradient id="paper" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse"><stop stop-color="#F7F6F1"/><stop offset="1" stop-color="#ECEBE4"/></linearGradient>
+    <linearGradient id="ink" x1="694" y1="84" x2="1116" y2="542" gradientUnits="userSpaceOnUse"><stop stop-color="#0C110E"/><stop offset="1" stop-color="#151A15"/></linearGradient>
+    <radialGradient id="lime" cx="0" cy="0" r="1" gradientTransform="translate(868 260) rotate(42) scale(258 237)" gradientUnits="userSpaceOnUse"><stop stop-color="#B7FF38" stop-opacity=".98"/><stop offset="1" stop-color="#B7FF38" stop-opacity="0"/></radialGradient>
+    <radialGradient id="blue" cx="0" cy="0" r="1" gradientTransform="translate(1067 424) rotate(-20) scale(239 183)" gradientUnits="userSpaceOnUse"><stop stop-color="#49B8FF" stop-opacity=".9"/><stop offset="1" stop-color="#49B8FF" stop-opacity="0"/></radialGradient>
+    <radialGradient id="orange" cx="0" cy="0" r="1" gradientTransform="translate(763 462) rotate(-46) scale(184 150)" gradientUnits="userSpaceOnUse"><stop stop-color="#FF7849" stop-opacity=".88"/><stop offset="1" stop-color="#FF7849" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#paper)"/>
+  <path d="M48 0V630M624 0V630" stroke="#D7D6CE"/>
+  <g fill="#171B17">
+    <path d="M80 102h20v-20h10v20h20v10h-20v20h-10v-20H80z"/>
+    <text x="80" y="176" font-family="Arial, Helvetica, sans-serif" font-size="16" letter-spacing="3" fill="#596059">LOCAL-FIRST REPOSITORY CHECKS</text>
+    <text x="80" y="280" font-family="Arial, Helvetica, sans-serif" font-size="72" font-weight="700" letter-spacing="-4.2">Find drift</text>
+    <text x="80" y="358" font-family="Arial, Helvetica, sans-serif" font-size="72" font-weight="700" letter-spacing="-4.2" fill="#7A8278">before it ships.</text>
+    <text x="80" y="423" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#4D554D">Evidence for every conflicting promise</text>
+    <text x="80" y="535" font-family="Arial, Helvetica, sans-serif" font-size="15" letter-spacing="1.8" fill="#596059">NO ACCOUNT  ·  NO UPLOAD  ·  NO CODE EXECUTION</text>
+  </g>
+  <g>
+    <rect x="672" y="52" width="480" height="526" rx="10" fill="url(#ink)"/>
+    <rect x="672.5" y="52.5" width="479" height="525" rx="9.5" stroke="#2D372B"/>
+    <text x="704" y="92" font-family="Arial, Helvetica, sans-serif" font-size="12" letter-spacing="1.5" fill="#B7C4B4">LIVE CONSISTENCY FIELD</text>
+    <text x="1002" y="92" font-family="Arial, Helvetica, sans-serif" font-size="12" letter-spacing="1.5" fill="#B7C4B4">LOCAL / DETERMINISTIC</text>
+    <circle cx="873" cy="271" r="167" fill="url(#lime)" filter="url(#blur-xl)"/>
+    <circle cx="1060" cy="415" r="149" fill="url(#blue)" filter="url(#blur-xl)"/>
+    <circle cx="777" cy="452" r="118" fill="url(#orange)" filter="url(#blur-xl)"/>
+    <path d="M698 397C791 344 850 398 917 369C982 341 1011 257 1126 276" stroke="#D9FFD1" stroke-opacity=".62" stroke-width="1.2"/>
+    <path d="M706 435C790 401 833 460 923 431C1019 400 1031 334 1126 338" stroke="#D9FFD1" stroke-opacity=".28" stroke-width="1.2"/>
+    <circle cx="917" cy="369" r="7" fill="#C8FF55" filter="url(#blur-md)"/>
+    <circle cx="917" cy="369" r="2.5" fill="#F5FFE0"/>
+    <rect x="704" y="488" width="416" height="1" fill="#52614F" fill-opacity=".5"/>
+    <text x="704" y="529" font-family="Arial, Helvetica, sans-serif" font-size="21" font-weight="700" fill="#F4F8EE">Conflicts stay visible.</text>
+    <text x="704" y="555" font-family="Arial, Helvetica, sans-serif" font-size="15" fill="#B7C4B4">Every finding retains the evidence that produced it.</text>
+  </g>
+</svg>

@@ -1,197 +1,100 @@
 <p align="center">
-  <img src="public/armonia-mark.svg" alt="Armonia mark" width="72" height="72" />
+  <img src="public/armonia-mark.svg" alt="Armonia" width="68" height="68" />
+</p>
+
+<h1 align="center">Armonia</h1>
+
+<p align="center">
+  <strong>Find repository drift before it ships.</strong><br />
+  Local-first consistency checks for the promises scattered across a software repository.
 </p>
 
 <p align="center">
-  <img src="public/og.png" alt="Armonia — Repository truth, reconciled" width="100%" />
+  <a href="https://github.com/AleDet01/Armonia/actions/workflows/ci.yml"><img src="https://github.com/AleDet01/Armonia/actions/workflows/ci.yml/badge.svg" alt="CI status" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-161b22?style=flat-square" alt="MIT license" /></a>
+  <img src="https://img.shields.io/badge/node-%E2%89%A522.13-161b22?style=flat-square&logo=nodedotjs" alt="Node.js 22.13 or newer" />
 </p>
 
 <p align="center">
-  <strong>Repository truth, reconciled.</strong><br />
-  An offline evidence engine for the promises scattered across a software repository.
+  <a href="https://AleDet01.github.io/Armonia/">Live demo</a> ·
+  <a href="docs/rules.md">Rules</a> ·
+  <a href="docs/privacy.md">Privacy</a> ·
+  <a href="CONTRIBUTING.md">Contributing</a>
 </p>
 
 <p align="center">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-161b22?style=flat-square" alt="MIT License" /></a>
-  <img src="https://img.shields.io/badge/node-%3E%3D22.13.0-161b22?style=flat-square&logo=nodedotjs" alt="Node.js 22.13.0 or newer" />
-  <img src="https://img.shields.io/badge/privacy-local--first-161b22?style=flat-square&logo=shield" alt="Local-first privacy" />
-  <img src="https://img.shields.io/badge/output-terminal%20%7C%20JSON%20%7C%20SARIF-161b22?style=flat-square" alt="Terminal, JSON, and SARIF output" />
+  <img src="public/readme-preview.svg" alt="Armonia interface preview" width="100%" />
 </p>
 
-> [!TIP]
-> Armonia does not ask which file is right. It shows you the evidence when two files cannot both be right.
+Armonia does not choose which file is right. It reports the declarations that
+disagree, their exact source locations, and a stable finding for code review or
+CI. A valid README, workflow, container and manifest can still contradict each
+other; Armonia checks the relationships between them.
 
-## Why Armonia exists
-
-Repositories drift in the gaps between valid files. A README can be accurate on
-its own while CI, environment examples, package metadata, and deployment files
-quietly tell a different story.
-
-| A conventional linter asks | Armonia asks |
-| --- | --- |
-| Is this file valid? | Do these files agree? |
-| Does this syntax type-check? | Does the documented command still exist? |
-| Is this workflow well-formed? | Does the workflow use the runtime the project promises? |
-
-Armonia collects source-located claims, reconciles claims that describe the
-same intent, and emits findings with both witnesses. The result is a durable
-review artifact rather than a vague warning.
-
-```text
-README.md          →  declared runtime
-.github/ci.yml     →  stale runtime
-package.json       →  declared range
-                         │
-                         └── runtime/node-drift
-                             Both declarations are shown. Armonia never guesses the winner.
-```
-
-## What it verifies
+## What it checks
 
 | Surface | Examples |
 | --- | --- |
-| Documentation | broken relative links, stale commands, missing README |
-| Runtime | Node-version and local-port drift across docs, CI, manifests, containers |
-| Delivery | invalid manifests, missing entrypoints, conflicting lockfiles, absent tests or CI |
-| Environment | source variables missing from `.env.example`, stale example variables |
-| Security posture | mutable workflow refs, implicit workflow permissions, floating images, possible secret shapes |
-| Public readiness | license, contribution guide, security policy, code of conduct |
-
-Every finding has a stable fingerprint and can be rendered as terminal text,
-JSON, or SARIF for code-scanning and review systems.
+| Documentation | missing README, broken relative links, commands that do not exist |
+| Runtime | Node major and local-port drift across docs, CI, manifests and Docker |
+| Delivery | invalid manifests, missing entrypoints, conflicting lockfiles, absent CI or test scripts |
+| Environment | undocumented or stale example variables |
+| Security posture | mutable Action refs, implicit workflow permissions, floating images, credential-shaped values |
+| Community readiness | license, contribution guide, security policy and code of conduct |
 
 ## Quick start
 
-**Prerequisite:** Node.js `>=22.13.0`.
+Requires Node.js 22.13 or newer.
 
 ```bash
-git clone <your-clone-url>
-cd armonia
+git clone https://github.com/AleDet01/Armonia.git
+cd Armonia
 npm ci --ignore-scripts
-npm run check
+node bin/armonia.mjs scan .
 ```
 
-Scan any repository without executing its code:
+Use `--fail-on never` for an exploratory local run. By default, the CLI exits
+with code `1` when it finds an error-level issue—safe for a CI gate.
 
 ```bash
-node bin/armonia.mjs scan /path/to/repository
-```
-
-Or scan the current directory from an Armonia checkout:
-
-```bash
-npm run scan
-```
-
-The scanner exits with code `1` when a finding reaches the configured threshold
-(`error` by default), making it safe to use as a CI gate.
-
-## Output that carries its evidence
-
-```bash
-# Machine-readable report; absolute local paths stay out by default.
+# A portable report for review or automation
 node bin/armonia.mjs scan . --format json --output artifacts/armonia.json
 
-# SARIF for compatible code-scanning and review tooling.
+# Native findings for compatible code-scanning tools
 node bin/armonia.mjs scan . --format sarif --output artifacts/armonia.sarif
-
-# Keep the report informative without failing a local exploration.
-node bin/armonia.mjs scan . --fail-on never
 ```
 
-```text
-ARMONIA  example-project
-92/100 · grade A- · 137 claims · 1 contradiction
+## Browser demo
 
-× ERROR  Runtime declaration disagrees across sources
-  runtime/node-drift · The project promises two incompatible runtimes.
-  ↳ package.json:12  declared runtime range
-  ↳ .github/workflows/ci.yml:18  stale runtime declaration
-  fix: Choose one supported runtime and update every declaration.
-```
+Run `npm run dev`, then choose a repository folder in a Chromium-based browser.
+The demo reads supported text files locally, never uploads them, and does not
+execute repository code. Use the CLI for the complete, repeatable check in CI.
 
-## Add a visible contract only when you need one
+## Privacy and scope
 
-Armonia works with zero configuration. To create a reviewable contract for a
-repository, initialize a configuration file:
+The scanner makes no network requests, does not follow symbolic links, bounds
+file traversal and text size, and redacts high-confidence credential-shaped
+values before a finding is stored or printed. Reports can still contain relative
+paths, line numbers and project metadata: review them before sharing.
+
+Armonia is an early `0.x` project. It surfaces evidence; maintainers decide
+which declaration to change. Read the full [threat model](docs/privacy.md) and
+[rule catalog](docs/rules.md) before enforcing it in production.
+
+## Deploy and contribute
+
+The live demo is a static GitHub Pages export. Each push to `main` runs tests,
+audits dependencies, and publishes the verified `dist/client` artifact. The
+workflow uses least-privilege permissions and pins third-party Actions to
+immutable commits; Dependabot maintains dependencies and Actions weekly.
 
 ```bash
-node bin/armonia.mjs init .
-node bin/armonia.mjs scan . --config armonia.config.json
-```
-
-```json
-{
-  "$schema": "./schema/armonia.schema.json",
-  "failOn": "error",
-  "exclude": ["fixtures/**", "generated/**"],
-  "rules": { "disable": [] }
-}
-```
-
-Exceptions belong in configuration, never in undocumented suppression comments.
-That keeps every trade-off visible in code review.
-
-## Portfolio mode, without portfolio leakage
-
-Armonia can aggregate only the metadata and scores you deliberately list in a
-registry. It does not publish source text or evidence from other repositories.
-Start from the self-contained [example registry](examples/portfolio/registry.json):
-
-```bash
-node bin/armonia.mjs portfolio \
-  --registry examples/portfolio/registry.json \
-  --output .armonia/portfolio-snapshot.json
-```
-
-Review any generated snapshot before committing it. A portfolio report can
-contain repository names, scores, paths relative to the registry, and other
-metadata you chose to include.
-
-## Privacy and threat model
-
-The core engine is deterministic and local-first:
-
-- it makes no network requests and executes no discovered repository files or commands;
-- it does not follow symbolic links and bounds traversal and text-file size;
-- it redacts high-confidence credential-shaped values before a finding is stored or rendered;
-- it writes output only when you explicitly pass `--output`.
-
-Reports may still contain filenames, line numbers, environment-variable names,
-and project metadata. Treat reports as review artifacts and inspect them before
-sharing. Read the full [security policy](SECURITY.md) and
-[privacy notes](docs/privacy.md).
-
-## Development
-
-```bash
-npm ci --ignore-scripts
-npm run lint
-npm test
-npm run build
-npm run test:site
 npm run check
 ```
 
-`npm run check` is the public-release gate: lint, deterministic core tests,
-production build, rendered-site test, and a self-scan must all succeed.
-
-## Release posture
-
-Armonia is an early public preview. Its JSON report contract is versioned;
-rules may evolve before `1.0`. Before tagging a release, follow
-[RELEASING.md](RELEASING.md), run the clean-environment gate, inspect the npm
-package contents with `npm pack --dry-run`, and enable GitHub private
-vulnerability reporting on the repository.
-
-## Documentation
-
-- [Architecture](docs/architecture.md)
-- [Rule catalog](docs/rules.md)
-- [Privacy notes](docs/privacy.md)
-- [Contributing](CONTRIBUTING.md)
-- [Security policy](SECURITY.md)
-- [Changelog](CHANGELOG.md)
+See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md),
+[RELEASING.md](RELEASING.md), and [CHANGELOG.md](CHANGELOG.md) for the project
+contract and release process.
 
 ## License
 

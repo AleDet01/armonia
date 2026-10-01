@@ -16,6 +16,10 @@ const STANDARD_ENV = new Set([
   "USERNAME",
   "NODE_ENV",
   "CODEX_SANDBOX",
+  // GitHub injects these into Actions runners; they are platform metadata,
+  // not configuration a contributor must add to a local .env.example.
+  "GITHUB_ACTIONS",
+  "GITHUB_REPOSITORY",
 ]);
 
 function stableFingerprint(ruleId, message, evidence) {
